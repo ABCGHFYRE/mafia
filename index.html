@@ -300,6 +300,45 @@ details[open] summary::after{content:'−'}
 @keyframes toastin{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}
 .confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
 
+/* QR scanner */
+.scanbtn{width:100%;padding:16px;font-size:16.5px}
+.ordiv{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.14em;font-weight:700}
+.ordiv::before,.ordiv::after{content:'';flex:1;height:1px;background:var(--line)}
+.scanner{position:fixed;inset:0;z-index:35;background:#000;display:flex;align-items:center;justify-content:center;animation:fadein .3s both}
+.scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sframe{position:relative;width:min(68vw,280px);aspect-ratio:1;border-radius:24px;box-shadow:0 0 0 100vmax #000000a0}
+.sframe i{position:absolute;width:44px;height:44px;border:4px solid var(--gold)}
+.sframe i:nth-child(1){top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:22px 0 0 0}
+.sframe i:nth-child(2){top:-2px;right:-2px;border-left:0;border-bottom:0;border-radius:0 22px 0 0}
+.sframe i:nth-child(3){bottom:-2px;left:-2px;border-right:0;border-top:0;border-radius:0 0 0 22px}
+.sframe i:nth-child(4){bottom:-2px;right:-2px;border-left:0;border-top:0;border-radius:0 0 22px 0}
+.sframe::after{content:'';position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanline 2s ease-in-out infinite;top:10%}
+@keyframes scanline{50%{top:88%}}
+.shint{position:absolute;top:max(40px,calc(env(safe-area-inset-top) + 24px));left:0;right:0;text-align:center;color:#fff;font-weight:600;font-size:17px;text-shadow:0 2px 8px #000}
+.scancancel{position:absolute;bottom:max(28px,calc(env(safe-area-inset-bottom) + 12px));left:24px;right:24px;background:#000000aa;color:#fff}
+
+/* phase splash */
+.splash{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:30px;animation:fadein .35s var(--ease) both;overflow:hidden}
+.splash.out{animation:splout .45s var(--ease) both;pointer-events:none}
+@keyframes splout{to{opacity:0;transform:scale(1.04)}}
+.splash h2{font-family:'Playfair Display',Georgia,serif;font-size:clamp(50px,15vw,76px);font-weight:900;line-height:1;animation:rise .7s var(--ease) .25s both;position:relative}
+.splash p{font-size:18px;color:#ffffffc4;max-width:28ch;animation:rise .7s var(--ease) .5s both;position:relative}
+.splash .sg{font-size:76px;line-height:1;animation:popin .8s var(--spring) .05s both;position:relative}
+.splash .moon{animation:moonup 1.3s var(--ease) both;margin-bottom:18px}
+@keyframes moonup{from{opacity:0;transform:translate(11px,50px)}to{opacity:1;transform:translateX(11px)}}
+.splash .sun{animation:sunrise 1.3s var(--ease) both}
+.splash .sbar{width:120px;height:3px;background:#ffffff22;border-radius:3px;overflow:hidden;margin-top:22px;position:relative}
+.splash .sbar i{display:block;height:100%;width:0;background:var(--gold);animation:fillbar var(--d,2600ms) linear forwards}
+@keyframes fillbar{to{width:100%}}
+.sp-night{background:radial-gradient(90% 60% at 50% 32%,#252c66,#07080f 72%)}
+.sp-day{background:radial-gradient(90% 60% at 50% 72%,#8a4a16,#140c08 72%)}
+.sp-vote,.sp-verdict{background:radial-gradient(90% 60% at 50% 40%,#5e1020,#0e0809 72%)}
+.sp-deal{background:radial-gradient(90% 60% at 50% 40%,#3d1422,#0e0b0c 72%)}
+.splash .stars{position:absolute;inset:0;background-image:radial-gradient(1.4px 1.4px at 12% 18%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 78% 12%,#fffc 50%,transparent 51%),radial-gradient(1.6px 1.6px at 40% 22%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 88% 40%,#fffb 50%,transparent 51%),radial-gradient(1.2px 1.2px at 22% 62%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 63% 74%,#fffc 50%,transparent 51%),radial-gradient(1.3px 1.3px at 8% 86%,#fff9 50%,transparent 51%),radial-gradient(1.5px 1.5px at 93% 82%,#fffb 50%,transparent 51%);animation:twinkle 2s ease-in-out infinite alternate}
+.splash .skip{position:absolute;bottom:max(24px,env(safe-area-inset-bottom));left:0;right:0;font-size:13px;color:#ffffff66;animation:fadein .5s 1.2s both}
+body.held #app,body.held #app *{animation-play-state:paused!important}
+.voicehelp{font-size:13px;color:var(--muted);padding:2px 0 8px}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -339,6 +378,16 @@ if(!Array.isArray(G))G=[];
 G=G.filter(g=>g&&g.id&&Array.isArray(g.names));
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}}
 
+let splashT=[],pendingSplash=null;
+function showSplash(o){const ms=window.__SPLASH_MS||2600;hideSplash(true);
+  const el=document.createElement('div');el.id='splash';el.className='splash sp-'+o.kind;el.style.setProperty('--d',ms+'ms');el.setAttribute('role','status');
+  const g={night:'<div class="moon"></div>',day:'<div class="sun"></div>',vote:'<div class="sg">🗳️</div>',verdict:'<div class="sg">⚖️</div>',deal:'<div class="sg">🎭</div>'}[o.kind]||'';
+  el.innerHTML=(o.kind==='night'?'<div class="stars"></div>':'')+g+`<h2>${esc(o.title)}</h2>${o.sub?`<p>${esc(o.sub)}</p>`:''}<div class="sbar"><i></i></div><div class="skip">Tap to skip</div>`;
+  document.body.appendChild(el);document.body.classList.add('held');haptic(25);
+  const t0=Date.now();el.addEventListener('click',e=>{e.stopPropagation();if(Date.now()-t0>700)hideSplash()});
+  splashT.push(setTimeout(()=>hideSplash(),ms))}
+function hideSplash(instant){splashT.forEach(clearTimeout);splashT=[];document.body.classList.remove('held');const el=document.getElementById('splash');if(!el)return;
+  if(instant||(window.__SPLASH_MS||2600)<100){el.remove();return}el.classList.add('out');setTimeout(()=>el.remove(),450)}
 let toastT=null;
 function toast(msg){let el=document.getElementById('toast');if(el)el.remove();el=document.createElement('div');el.id='toast';el.className='toast';el.textContent=msg;document.body.appendChild(el);
   clearTimeout(toastT);toastT=setTimeout(()=>{el.style.transition='opacity .3s';el.style.opacity='0';setTimeout(()=>el.remove(),320)},2000)}
@@ -354,9 +403,16 @@ function pickVoice(){if(!synth)return null;if(voicePick)return voicePick;
   for(const p of pref){const v=en.find(v=>v.name.indexOf(p)===0);if(v)return voicePick=v}
   return voicePick=en.find(v=>v.localService)||en[0]||null}
 if(synth){try{synth.addEventListener('voiceschanged',()=>{voicePick=null})}catch(e){}}
+let voiceUnlocked=false;
+function unlockVoice(){if(voiceUnlocked||!synth)return;voiceUnlocked=true;
+  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;u.rate=2;synth.speak(u)}catch(e){}}
+function speakNow(text){try{if(synth.paused)synth.resume();const u=new SpeechSynthesisUtterance(text);u.rate=.95;u.pitch=.95;u.volume=1;const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}else u.lang='en-US';synth.speak(u)}catch(e){}}
 function say(text,force){if(!text||!synth)return;if(!force&&(!S.cfg.voice||S.cfg.mode!=='phone'))return;
   lastSaid=text;
-  try{synth.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=.95;u.pitch=.95;const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}else u.lang='en-US';synth.speak(u)}catch(e){}}
+  // Safari drops speech started right after cancel(), so only cancel when something is playing, then wait a beat.
+  let busy=false;try{busy=!!(synth.speaking||synth.pending)}catch(e){}
+  if(busy){try{synth.cancel()}catch(e){}setTimeout(()=>speakNow(text),180)}else speakNow(text)}
+['touchend','click','keydown'].forEach(ev=>document.addEventListener(ev,unlockVoice,{capture:true,passive:true}));
 function hush(){try{synth&&synth.cancel()}catch(e){}}
 const roleSay=r=>r==='mafia'?'in the Mafia':r==='villager'?'a Villager':'the '+ROLES[r].name;
 const winSay={town:'The town wins! Every member of the Mafia has been caught.',mafia:'The Mafia wins. They have taken over the town.'};
@@ -465,7 +521,8 @@ function vSettings(){autoCfg();const c=S.cfg,n=S.names.length,vil=n-(c.mafia+c.d
     ${c.mode==='person'?'<p class="small muted" style="margin-top:10px">Don\'t add the narrator as a player.</p>':''}
   </section>
   <section class="card">
-    ${c.mode==='phone'&&canVoice()?`<div class="row"><span>🔊 Voice narrator<small>Reads the night and votes out loud</small></span><button class="tog ${c.voice?'on':''}" data-a="voicecfg" aria-pressed="${c.voice}" aria-label="Voice narrator"></button></div>`:''}
+    ${c.mode==='phone'&&canVoice()?`<div class="row"><span>🔊 Voice narrator<small>Reads the night and votes out loud</small></span><button class="tog ${c.voice?'on':''}" data-a="voicecfg" aria-pressed="${c.voice}" aria-label="Voice narrator"></button></div>
+    ${c.voice?`<div class="voicehelp"><button class="link" data-a="testvoice" style="padding:4px 0">▶ Test the voice</button> · Can't hear it? Turn off Silent Mode and turn the volume up.</div>`:''}`:''}
     <div class="row"><span>⏱ Discussion time</span><div class="step"><button data-a="mins" data-v="-1" ${c.mins<=1?'disabled':''} aria-label="Less time">−</button><b>${c.mins}m</b><button data-a="mins" data-v="1" ${c.mins>=15?'disabled':''} aria-label="More time">+</button></div></div>
     <div class="row"><span>👁 Show roles when people die</span><button class="tog ${c.reveal?'on':''}" data-a="reveal" aria-pressed="${c.reveal}" aria-label="Show roles when people die"></button></div>
   </section>
@@ -617,12 +674,12 @@ function startGame(){autoCfg();const c=S.cfg,n=S.names.length;
   while(roles.length<n)roles.push('villager');shuffle(roles);
   S.players=S.names.map((name,i)=>({name,role:roles[i],alive:true}));
   Object.assign(S,{screen:'reveal',ri:null,flipped:false,revealed:[],round:1,log:[],winner:null,jester:null,pick:null,menu:null,confirm:null,night:null,confettiDone:false,morning:null,verdict:null,timer:null});
-  toSay=dealSay;}
+  toSay=dealSay;pendingSplash={kind:'deal',title:'Secret roles',sub:'Pass the phone around. Tap your name when it reaches you.'};}
 function beginNight(){S.pick=null;S.flipped=false;
   S.night={votes:[],save:null,invest:null,idx:0,stage:null,done:[],cur:null};
   if(S.cfg.mode==='person'){const has=r=>S.players.some(p=>p.alive&&p.role===r);S.night.steps=['mafia','doctor','detective'].filter(has)}
   else S.night.order=aliveIdx();
-  S.screen='night';toSay=nightSay();}
+  S.screen='night';toSay=nightSay();pendingSplash={kind:'night',title:'Night '+S.round,sub:S.cfg.mode==='person'?'Everyone, close your eyes.':'Everyone, close your eyes. Pass the phone around.'};}
 function turnDone(i){const N=S.night;if(!N.done.includes(i))N.done.push(i);N.cur=null;N.stage=null;S.flipped=false;S.pick=null;
   if(N.done.length>=N.order.length)toSay='That is everyone. Put the phone in the middle. Everyone, open your eyes.';}
 function resolveNight(){const N=S.night;let t=null;
@@ -631,7 +688,7 @@ function resolveNight(){const N=S.night;let t=null;
   if(t!=null){if(N.save===t)saved=true;else{killed=t;P(t).alive=false}}
   S.morning={killed,saved};
   S.log.push(`<b>Night ${S.round}:</b> `+(t==null?'The Mafia did nothing.':`Mafia targeted ${esc(P(t).name)} — ${saved?'saved by the Doctor.':'killed.'}`)+(N.invest!=null?` Detective checked ${esc(P(N.invest).name)}.`:''));
-  S.winner=checkWin();S.screen='morning';S.pick=null;haptic(30);
+  S.winner=checkWin();S.screen='morning';S.pick=null;haptic(30);pendingSplash={kind:'day',title:'Morning',sub:'Day '+S.round+'. Everyone, open your eyes.'};
   let line='Good morning, everyone. ';
   if(killed!=null)line+=`Last night, the Mafia killed ${P(killed).name}.`+(S.cfg.reveal?` They were ${roleSay(P(killed).role)}.`:'');
   else line+=saved?'The Mafia struck last night, but the doctor saved their target. Everyone survived.':'It was a quiet night. Everyone survived.';
@@ -666,6 +723,7 @@ const A={
   voicecfg:()=>{S.cfg.voice=!S.cfg.voice;if(S.cfg.voice)toSay='Voice narrator on.';else hush()},
   voice:()=>{S.cfg.voice=!S.cfg.voice;if(S.cfg.voice)toSay='Voice narrator on.';else hush()},
   repeat:()=>{S.menu=null;if(lastSaid)say(lastSaid,true)},
+  testvoice:()=>{say('This is your Mafia narrator. If you can hear me, you are all set.',true);toast('Playing… no sound? Turn off Silent Mode')},
   mins:d=>{S.cfg.mins=Math.min(15,Math.max(1,S.cfg.mins+ +d.v))},
   start:()=>{if(!setupError())startGame()},
   self:d=>{const i=+d.i;haptic();
@@ -684,14 +742,14 @@ const A={
     toSay=`Day ${S.round}. You have ${S.cfg.mins} minute${S.cfg.mins>1?'s':''} to find the Mafia. Go!`},
   tgo:()=>{const T=S.timer,l=tLeft();if(T.running){T.left=l;T.running=false}else{if(l===0){T.left=60;T.total=60;T.w60=1;T.w10=0}T.endsAt=Date.now()+T.left*1000;T.running=true}},
   tadd:d=>{const T=S.timer,l=Math.max(0,tLeft()+ +d.v);T.left=l;T.total=Math.max(T.total,l);if(l>60)T.w60=0;if(l>10)T.w10=0;if(T.running){if(l===0)T.running=false;else T.endsAt=Date.now()+l*1000}},
-  vote:()=>{if(S.timer){S.timer.left=tLeft();S.timer.running=false}S.screen='vote';S.pick=null;
+  vote:()=>{if(S.timer){S.timer.left=tLeft();S.timer.running=false}S.screen='vote';S.pick=null;pendingSplash={kind:'vote',title:'Time to vote',sub:'Everyone point on three.'};
     toSay='Time to vote. On the count of three, everyone point at who you think is in the Mafia. One. Two. Three.'},
   elim:()=>{if(S.pick==null)return;const p=P(S.pick);p.alive=false;S.verdict={who:S.pick};haptic(30);
     S.log.push(`<b>Day ${S.round}:</b> Town voted out ${esc(p.name)} (${ROLES[p.role].name}).`);
     if(p.role==='jester'){S.winner='jester';S.jester=S.pick;toSay=`The town voted out ${p.name}. ${p.name} was the Jester, and the Jester wins!`}
     else{S.winner=checkWin();toSay=`The town voted out ${p.name}.`+(S.cfg.reveal?` They were ${roleSay(p.role)}.`:'')+(S.winner?' '+winSay[S.winner]:' Night is coming.')}
-    S.screen='verdict';S.pick=null},
-  noelim:()=>{S.verdict={who:null};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay='The town could not agree. Nobody was voted out. Night is coming.'},
+    S.screen='verdict';S.pick=null;pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'}},
+  noelim:()=>{pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'};S.verdict={who:null};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay='The town could not agree. Nobody was voted out. Night is coming.'},
   over:()=>{S.screen='over'},
   menu:()=>{S.menu='main'},
   close:()=>{S.menu=null;S.edit=null},
@@ -725,6 +783,7 @@ function handle(b,e){
   if(b.disabled)return;const f=A[b.dataset.a];if(!f)return;
   const prev=S.confirm;S.confirm=null;
   f(b.dataset,prev);render();
+  if(pendingSplash){showSplash(pendingSplash);pendingSplash=null}
   if(toSay){say(toSay);toSay=null}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)handle(b,e);else if(S.confirm&&!e.target.closest('form,input')){S.confirm=null;render()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.menu){S.menu=null;S.edit=null;render()}});
@@ -748,7 +807,7 @@ setInterval(()=>{if(S.screen!=='day'||!S.timer||!S.timer.running)return;const T=
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 window.__mafia={get S(){return S},get G(){return G},A,render};
 window.MafiaCore={get S(){return S},A,V,render,esc,toast,say,hush,haptic,ROLES,tag,rnd,shuffle,cleanName,save,
-  canVoice,targetsHTML:null,fmt:s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),CIRC,R0,winSay,roleSay,confetti:()=>confetti()};
+  canVoice,splash:o=>showSplash(o),fmt:s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),CIRC,R0,winSay,roleSay,confetti:()=>confetti()};
 render();
 })();
 </script>

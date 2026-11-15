@@ -197,6 +197,33 @@ function joinURL(){return location.origin+location.pathname+'?join='+O.code+(EMU
 function ensureQR(){if(O.qr&&O.qrFor===O.code)return;if(window.qrcode){const q=window.qrcode(0,'M');q.addData(joinURL());q.make();O.qr=q.createSvgTag({cellSize:5,margin:2,scalable:true});O.qrFor=O.code;draw();return}
   if(O.qrLoading)return;O.qrLoading=true;const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';sc.onload=()=>{O.qrLoading=false;ensureQR()};sc.onerror=()=>{O.qrLoading=false};document.head.appendChild(sc)}
 
+/* ---------- QR scanner ---------- */
+const SC={stream:null,raf:0,det:null,canvas:null,busy:false};
+function codeFromText(t){t=String(t||'').trim();let m=t.match(/[?&]join=([A-Za-z]{4})/);if(m)return m[1].toUpperCase();m=t.match(/^[A-Za-z]{4}$/);return m?t.toUpperCase():''}
+function loadJsQR(){return window.jsQR?Promise.resolve():new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)})}
+async function startScan(){if(SC.stream)return;O.err='';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){O.err='This browser can\'t use the camera. Type the code instead, or scan with your Camera app.';draw();return}
+  const ov=document.createElement('div');ov.id='scanner';ov.className='scanner';
+  ov.innerHTML='<video playsinline muted autoplay></video><div class="sframe"><i></i><i></i><i></i><i></i></div><p class="shint">Point at the QR code on the host\'s phone</p><button class="btn ghost scancancel" data-a="oscanstop">Cancel</button>';
+  document.body.appendChild(ov);
+  try{SC.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
+  catch(e){stopScan();O.err=/NotAllowed|Permission/i.test(e&&e.name||'')?'Camera access was blocked. Allow it in your settings, or type the code.':'Couldn\'t open the camera. Type the code instead.';draw();return}
+  const v=ov.querySelector('video');v.srcObject=SC.stream;try{await v.play()}catch(e){}
+  try{if('BarcodeDetector' in window&&(await window.BarcodeDetector.getSupportedFormats()).includes('qr_code'))SC.det=new window.BarcodeDetector({formats:['qr_code']})}catch(e){}
+  if(!SC.det){try{await loadJsQR()}catch(e){stopScan();O.err='Couldn\'t load the scanner. Type the code instead.';draw();return}}
+  SC.canvas=document.createElement('canvas');tick()}
+async function tick(){if(!SC.stream)return;const v=document.querySelector('#scanner video');
+  if(v&&v.readyState>=2&&!SC.busy){SC.busy=true;let txt='';
+    try{if(SC.det){const r=await SC.det.detect(v);if(r&&r[0])txt=r[0].rawValue}
+      else{const w=Math.min(640,v.videoWidth),h=Math.round(w*v.videoHeight/v.videoWidth);SC.canvas.width=w;SC.canvas.height=h;const ctx=SC.canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(v,0,0,w,h);const img=ctx.getImageData(0,0,w,h);const r=window.jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(r)txt=r.data}}catch(e){}
+    SC.busy=false;
+    const code=codeFromText(txt);
+    if(code){haptic([30,40,30]);stopScan();O.joinCode=code;toast('Found game '+code);M.render();const nm=document.getElementById('oname');
+      if(nm&&M.cleanName(nm.value))A.ojoin();else if(nm)nm.focus();return}
+    if(txt&&!SC.warned){SC.warned=true;toast('That QR code isn\'t a Mafia game')}}
+  SC.raf=requestAnimationFrame(tick)}
+function stopScan(){cancelAnimationFrame(SC.raf);if(SC.stream){SC.stream.getTracks().forEach(t=>t.stop());SC.stream=null}SC.det=null;SC.warned=false;const ov=document.getElementById('scanner');if(ov)ov.remove()}
+
 /* ---------- views ---------- */
 function top(label){const s=st(),ph=phaseOf();const v=isHost()&&M.canVoice();
   return`<div class="top"><span class="phase">${ph==='night'?'☾':ph==='day'?'☀':'📱'}&nbsp; ${label}</span><span class="tb"><span class="codechip">${esc(O.code||'')}</span>${v?`<button class="iconbtn" data-a="ovoice" aria-label="Narrator voice">${(s.cfg||{}).voice!==false?'🔊':'🔇'}</button>`:''}<button class="iconbtn" data-a="omenu" aria-label="Menu">⋯</button></span></div>`}
@@ -223,6 +250,8 @@ function vHostForm(){return`<div class="top"><button class="backbtn" data-a="osu
   <div class="dock"><button class="btn big" data-a="ocreate" ${O.busy?'disabled':''}>${O.busy?'Creating…':'Create game'}</button></div>`}
 function vJoinForm(){return`<div class="top"><button class="backbtn" data-a="osub" data-v="menu"><span>‹</span> Back</button><span class="ttl">Join</span><span style="width:64px"></span></div>
   <div><h2 class="title">Join a game</h2><p class="subtle">Ask the host for the 4-letter code.</p></div>
+  <button class="btn ghost scanbtn" data-a="oscan">📷 Scan the host's QR code</button>
+  <div class="ordiv"><span>or type it</span></div>
   <form id="ojoinf" class="col"><label class="lbl" for="ocode">Game code</label><input id="ocode" class="codein" maxlength="4" value="${esc(O.joinCode||'')}" placeholder="ABCD" autocomplete="off" autocapitalize="characters" spellcheck="false">
   <label class="lbl" for="oname">Your name</label><input id="oname" maxlength="18" value="${esc(lastName())}" placeholder="Your name" autocomplete="off" autocapitalize="words" enterkeyhint="go"><button type="submit" hidden></button></form>
   ${O.err?`<p class="err">${esc(O.err)}</p>`:''}
@@ -243,7 +272,8 @@ function vLobby(){const ids=lobbyOrder(),p=pl(),n=ids.length,c=effCfg(n),err=cfg
     <div class="rchips">${chip('mafia',c.mafia)}${chip('doctor',c.doctor)}${chip('detective',c.detective)}${chip('jester',c.jester)}${chip('villager',Math.max(vil,0))}</div>
     ${O.custom?`<div class="custom">${step('mafia','Mafia','🔪',1,Math.max(1,Math.ceil(n/2)-1))}${step('doctor','Doctor','🩺',0,1)}${step('detective','Detective','🔍',0,1)}${step('jester','Jester','🃏',0,1)}${c.manual?'<button class="link" data-a="ocfgauto">Reset to recommended</button>':''}</div>`:''}</section>
   <section class="card">
-    ${M.canVoice()?`<div class="row"><span>🔊 Narrator voice<small>Plays out loud from your phone</small></span><button class="tog ${c.voice!==false?'on':''}" data-a="ocfgtog" data-k="voice"></button></div>`:''}
+    ${M.canVoice()?`<div class="row"><span>🔊 Narrator voice<small>Plays out loud from your phone</small></span><button class="tog ${c.voice!==false?'on':''}" data-a="ocfgtog" data-k="voice"></button></div>
+    ${c.voice!==false?`<div class="voicehelp"><button class="link" data-a="testvoice" style="padding:4px 0">▶ Test the voice</button> · Can't hear it? Turn off Silent Mode and turn the volume up.</div>`:''}`:''}
     <div class="row"><span>⏱ Discussion time</span><div class="step"><button data-a="ocfg" data-k="mins" data-v="-1" ${c.mins<=1?'disabled':''}>−</button><b>${c.mins}m</b><button data-a="ocfg" data-k="mins" data-v="1" ${c.mins>=15?'disabled':''}>+</button></div></div>
     <div class="row"><span>👁 Show roles when people die</span><button class="tog ${c.reveal?'on':''}" data-a="ocfgtog" data-k="reveal"></button></div></section>
   ${n>=4&&err?`<p class="err">${err}</p>`:''}
@@ -319,8 +349,10 @@ function view(){if(O.code&&O.room===undefined)return vConnecting();
 function myAct(ph,extra){const s=st();return F.set(`actions/${O.code}/${F.uid}`,Object.assign({gid:s.gid,round:s.round,phase:ph,by:F.uid,t:F.ts()},extra||{}))}
 const A=M.A;
 Object.assign(A,{
-  ohome:()=>{S().screen='home';O.err=''},
-  osub:d=>{O.sub=d.v;O.err=''},
+  ohome:()=>{S().screen='home';O.err='';stopScan()},
+  osub:d=>{O.sub=d.v;O.err='';stopScan()},
+  oscan:()=>{startScan()},
+  oscanstop:()=>{stopScan()},
   ocreate:()=>{const nm=M.cleanName(document.getElementById('oname')&&document.getElementById('oname').value);if(nm)S().lastNetName=nm;hostCreate(nm)},
   ojoin:()=>{const nm=M.cleanName(document.getElementById('oname')&&document.getElementById('oname').value);const code=document.getElementById('ocode')&&document.getElementById('ocode').value;O.joinCode=(code||'').toUpperCase();if(nm)S().lastNetName=nm;join(code,nm)},
   oabandon:()=>{unsubAll();O.code=null;O.room=null;O.busy=false;O.err='';S().net=null;O.sub='menu'},
@@ -371,7 +403,8 @@ let lastPhaseKey='';
 window.MafiaOnline={
   key(){const s=st();return[O.code?'in':'out',O.sub,O.room===undefined?'wait':O.room?'room':'none',s.gid,s.round,s.phase,O.flipKey===phaseKey(),O.sentKey===phaseKey(),!!(s.done&&F&&s.done[F.uid]),!!O.changing].join('|')},
   phase:phaseOf,sheet,
-  after(){O.fx=null;const k=phaseKey();if(k!==lastPhaseKey){const first=!lastPhaseKey;lastPhaseKey=k;O.pick=null;O.changing=false;if(st().phase!=='vote')O.myVote=null;if(!first)haptic(25)}},
+  after(){O.fx=null;const k=phaseKey();if(k!==lastPhaseKey){const first=!lastPhaseKey;lastPhaseKey=k;O.pick=null;O.changing=false;if(st().phase!=='vote')O.myVote=null;
+    if(!first&&O.room){const s=st(),sp={roles:{kind:'deal',title:'Secret roles',sub:'Check your phone. Keep it hidden!'},night:{kind:'night',title:'Night '+s.round,sub:'Take your turn on your phone.'},morning:{kind:'day',title:'Morning',sub:'Day '+s.round+'. Everyone, wake up.'},vote:{kind:'vote',title:'Time to vote',sub:'Vote on your phone.'},verdict:{kind:'verdict',title:'The verdict',sub:'The votes are in…'}}[s.phase];if(sp)M.splash(sp)}}},
   open(){O.err='';if(!O.code)O.sub='menu'},
   _O:O,get _F(){return F}
 };
