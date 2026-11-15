@@ -99,7 +99,7 @@ function onRoom(){const r=O.room;
   if(!r||!r.host){const host=O.wasHost;leaveLocal();if(!host)toast('The host ended the game');return}
   const mine=r.players&&r.players[F.uid];
   if(!mine||!mine.name){leaveLocal();toast('You were removed from the game');return}
-  O.wasHost=isHost();if(isHost())startBeat();
+  O.wasHost=isHost();if(isHost()){startBeat();if(window.MafiaVoice&&(st().cfg||{}).voice!==false&&!O.warmed){O.warmed=true;window.MafiaVoice.warm()}}
   if(isHost()&&!O.actUnsub)O.actUnsub=F.on('actions/'+O.code,v=>{O.actions=v||{};hostTick();draw()});
   if(!mine.online)F.set(`rooms/${O.code}/players/${F.uid}/online`,true).catch(()=>{});
   hostTick();narrate();draw()}
@@ -298,7 +298,7 @@ function vLobby(){const ids=lobbyOrder(),p=pl(),n=ids.length,c=effCfg(n),err=cfg
     ${O.custom?`<div class="custom">${step('mafia','Mafia','🔪',1,Math.max(1,Math.ceil(n/2)-1))}${step('doctor','Doctor','🩺',0,1)}${step('detective','Detective','🔍',0,1)}${step('jester','Jester','🃏',0,1)}${c.manual?'<button class="link" data-a="ocfgauto">Reset to recommended</button>':''}</div>`:''}</section>
   <section class="card">
     ${M.canVoice()?`<div class="row"><span>🔊 Narrator voice<small>Plays out loud from your phone</small></span><button class="tog ${c.voice!==false?'on':''}" data-a="ocfgtog" data-k="voice"></button></div>
-    ${c.voice!==false?`<div class="voicehelp"><button class="link" data-a="testvoice" style="padding:4px 0">▶ Test the voice</button> · Can't hear it? Turn off Silent Mode and turn the volume up.</div>`:''}`:''}
+    ${c.voice!==false&&window.MafiaVoice?window.MafiaVoice.panelHTML():''}`:''}
     <div class="row"><span>⏱ Discussion time</span><div class="step"><button data-a="ocfg" data-k="mins" data-v="-1" ${c.mins<=1?'disabled':''}>−</button><b>${c.mins}m</b><button data-a="ocfg" data-k="mins" data-v="1" ${c.mins>=15?'disabled':''}>+</button></div></div>
     <div class="row"><span>👁 Show roles when people die</span><button class="tog ${c.reveal?'on':''}" data-a="ocfgtog" data-k="reveal"></button></div></section>
   ${n>=4&&err?`<p class="err">${err}</p>`:''}
