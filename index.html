@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mafia</title>
-<meta name="description" content="Mafia party game for one phone — deal secret roles, run the night, vote out the killers.">
+<meta name="description" content="Mafia party game for one phone — deal secret roles, survive the night, vote out the killers.">
 <meta name="theme-color" content="#0e0b0c">
 <meta name="apple-mobile-web-app-title" content="Mafia">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,174 +16,345 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0e0b0c;--card:#191416;--line:#2e2629;--text:#f2ece6;--muted:#9d918a;--red:#c8283a;--gold:#d9b26f;--green:#4fbf87}
+:root{--bg:#0e0b0c;--card:#1a1517;--line:#30272b;--text:#f3ede7;--muted:#a1958e;--red:#c8283a;--red2:#e0465a;--gold:#d9b26f;--green:#4fbf87;
+  --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.4,.5,1)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
-body{background:radial-gradient(120% 55% at 50% -12%,#33101a 0%,var(--bg) 60%) fixed,var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,-apple-system,sans-serif;min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
-button{cursor:pointer;font:inherit;color:inherit}
-#app{max-width:520px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
-h1,h2,h3,.bigname,.rname,.clock,.script{font-family:'Playfair Display',Georgia,serif}
-.hero{text-align:center;padding:22px 0 4px}
-.hero img{width:76px;height:76px;border-radius:18px;box-shadow:0 10px 30px -8px rgba(0,0,0,.8);margin-bottom:12px}
-.hero h1{font-size:80px;line-height:.9;font-weight:900;font-style:italic;letter-spacing:-.02em}
-.hero h1::after{content:'';display:block;width:56px;height:4px;background:var(--red);margin:14px auto 0;border-radius:2px}
-.kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
-.sub{color:var(--muted);max-width:34ch;margin:12px auto 0}
-.muted{color:var(--muted)}.small{font-size:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
-.card h2{font-size:21px}
-.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.pill{background:#2a2226;border-radius:99px;padding:2px 10px;font-size:13px;font-weight:600;color:var(--muted)}
-.addrow{display:flex;gap:8px}
-input{flex:1;min-width:0;width:100%;background:#0f0c0d;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px}
-input:focus{outline:none;border-color:var(--gold)}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.chip{display:inline-flex;align-items:center;gap:2px;background:#251e21;border:1px solid var(--line);border-radius:99px;padding:5px 5px 5px 12px;font-weight:500;font-size:15px}
-.chip.plain{padding:6px 12px}
-.chip.dead{opacity:.45;text-decoration:line-through}
-.chip button{background:none;border:0;color:var(--muted);font-size:19px;width:28px;height:28px;border-radius:50%;line-height:1}
-.row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);gap:12px}
-.card-h+.row{border-top:0}
-.row small{display:block;color:var(--muted);font-size:13px;line-height:1.3}
-.step{display:flex;align-items:center;gap:12px;flex:none}
-.step button{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:#251e21;font-size:20px}
-.step button:disabled{opacity:.28}
-.step b{min-width:20px;text-align:center;font-variant-numeric:tabular-nums}
-.bad{color:#ff8a95}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 6px}
-.seg button{background:#0f0c0d;border:1px solid var(--line);border-radius:12px;padding:12px;font-weight:600;text-align:left}
-.seg button small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.35}
-.seg button.on{border-color:var(--gold);background:#251d14}
-.tog{width:50px;height:30px;border-radius:99px;background:#3a3134;border:0;position:relative;flex:none;transition:background .2s}
-.tog::after{content:'';position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s}
-.tog.on{background:var(--red)}.tog.on::after{left:24px}
-.btn{appearance:none;border:0;border-radius:14px;background:var(--red);color:#fff;font-weight:700;padding:13px 16px;transition:transform .08s}
-.btn.big{width:100%;padding:17px;font-size:17px;box-shadow:0 10px 26px -10px rgba(200,40,58,.75)}
-.btn.ghost{background:#251e21;border:1px solid var(--line);box-shadow:none;color:var(--text)}
-.btn.sm{padding:9px 14px;font-size:14px;border-radius:11px}
-.btn.danger{color:#ff8a95}
-.btn:disabled{opacity:.35;box-shadow:none}
-.btn:not(:disabled):active{transform:scale(.97)}
-.btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.link{background:none;border:0;color:var(--gold);font-weight:600;font-size:14px}
-.err{color:#ff8a95;text-align:center;font-weight:600;font-size:15px}
-.pass{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:66vh;padding:20px 0}
-.pass .btn.big{margin-top:18px}
-.bigname{font-size:clamp(42px,13vw,66px);font-weight:900;line-height:1.05;word-break:break-word}
-.lead{font-size:18px;color:#ddd3cc;max-width:30ch}
-.glyph{font-size:54px;line-height:1;margin-bottom:6px}
-.red{color:#ff5466}.green{color:var(--green)}
-.rolecard{border-radius:22px;padding:26px 20px;text-align:center;border:1px solid var(--line);background:var(--card);animation:pop .25s ease-out}
-@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
-.t-mafia{background:linear-gradient(160deg,#55101c,#1a0d10);border-color:#82202e}
-.t-town{background:linear-gradient(160deg,#14283d,#10141b);border-color:#2b4a70}
-.t-solo{background:linear-gradient(160deg,#3a1a50,#150f1b);border-color:#62338a}
-.ricon{font-size:54px;line-height:1}
-.rname{font-size:46px;font-weight:900;margin:2px 0 8px;line-height:1.1}
-.rolecard p{color:#dcd2cb;max-width:36ch;margin:0 auto}
-.mates{margin-top:14px;background:rgba(0,0,0,.28);border-radius:12px;padding:10px 12px;font-size:14.5px}
-.targets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tgt{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:15px 10px;font-weight:600;font-size:16px;word-break:break-word}
-.tgt.self{padding:18px 10px;font-size:17px}
-.tgt.done{opacity:.32;text-decoration:line-through;border-style:dashed}
-.tgt.on{border-color:var(--gold);background:#2c2116;color:#ffe3b0}
-.prompt{font-size:21px;text-align:center;margin-top:4px}
-.hint{text-align:center;color:var(--muted);font-size:13.5px;margin-top:-6px}
-.top{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;min-height:32px}
-.top .tb{display:flex;align-items:center;gap:6px}
-.iconbtn{background:#251e21;border:1px solid var(--line);border-radius:10px;font-size:16px;width:36px;height:32px;line-height:1}
-.clock{font-size:104px;text-align:center;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin:18px 0 4px}
-.clock.warn{color:#ff5466}
+body{color:var(--text);font:16px/1.5 Inter,system-ui,-apple-system,sans-serif;min-height:100vh;min-height:100dvh;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;background:var(--bg)}
+button{cursor:pointer;font:inherit;color:inherit;-webkit-user-select:none;user-select:none}
+img{display:block}
+
+/* mood backgrounds */
+.bg{position:fixed;inset:0;z-index:-1;transition:opacity 1.1s var(--ease);opacity:0;pointer-events:none}
+.bg-neutral{background:radial-gradient(120% 60% at 50% -15%,#3a111c 0%,transparent 62%),var(--bg)}
+.bg-night{background:radial-gradient(100% 55% at 50% -10%,#1b1f45 0%,transparent 65%),linear-gradient(#0a0b16,#0b0a10)}
+.bg-night::before,.bg-night::after{content:'';position:absolute;inset:0;background-image:radial-gradient(1.2px 1.2px at 12% 18%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 78% 12%,#fff8 50%,transparent 51%),radial-gradient(1.4px 1.4px at 40% 30%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 88% 40%,#fff7 50%,transparent 51%),radial-gradient(1.2px 1.2px at 22% 52%,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 63% 24%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 5% 70%,#fff5 50%,transparent 51%),radial-gradient(1.3px 1.3px at 93% 76%,#fff6 50%,transparent 51%);animation:twinkle 5s ease-in-out infinite alternate}
+.bg-night::after{transform:translate(37%,23%);animation-delay:-2.5s;opacity:.7}
+@keyframes twinkle{from{opacity:.35}to{opacity:1}}
+.bg-day{background:radial-gradient(110% 55% at 50% -12%,#4a2a10 0%,transparent 62%),linear-gradient(#120d0b,#0e0b0c)}
+body[data-phase=neutral] .bg-neutral,body[data-phase=night] .bg-night,body[data-phase=day] .bg-day{opacity:1}
+
+#app{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
+h1,h2,h3,.bigname,.rname,.fname,.title,.tnum,.script{font-family:'Playfair Display',Georgia,serif}
+
+/* entrance animations — only on screen change (.enter) */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes popin{0%{opacity:0;transform:scale(.85)}70%{transform:scale(1.03)}100%{opacity:1;transform:none}}
+@keyframes blurin{from{opacity:0;filter:blur(14px);transform:scale(1.15)}to{opacity:1;filter:none;transform:none}}
+.enter>*{animation:rise .45s var(--ease) both}
+.enter>*:nth-child(2){animation-delay:.04s}.enter>*:nth-child(3){animation-delay:.08s}.enter>*:nth-child(4){animation-delay:.12s}.enter>*:nth-child(5){animation-delay:.16s}.enter>*:nth-child(n+6){animation-delay:.2s}
+.enter .stagger>*{animation:popin .45s var(--ease) both;animation-delay:calc(.12s + var(--i,0)*45ms)}
+
+/* top bar */
+.top{display:flex;justify-content:space-between;align-items:center;min-height:40px}
+.backbtn{background:none;border:0;color:var(--gold);font-weight:600;font-size:16px;padding:6px 8px 6px 0;display:flex;align-items:center;gap:4px}
+.backbtn span{font-size:26px;line-height:1;margin-top:-3px}
+.top .ttl{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.phase{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tb{display:flex;gap:8px}
+.iconbtn{background:#ffffff0d;border:1px solid #ffffff14;border-radius:12px;width:40px;height:38px;font-size:17px;line-height:1;display:grid;place-items:center;transition:transform .15s,background .2s;flex:none}
+.iconbtn:active{transform:scale(.9);background:#ffffff1f}
+
+/* type */
+.title{font-size:34px;line-height:1.1;font-weight:900}
+.subtle{color:var(--muted);font-size:15px;margin-top:4px}
+.kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700}
 .c{text-align:center}
-.trio{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px}
-.script{border-left:3px solid var(--gold);padding:12px 16px;background:#1f1814;border-radius:0 14px 14px 0;font-style:italic;font-size:21px;line-height:1.35}
-.script small{display:block;font-family:Inter,sans-serif;font-style:normal;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;font-weight:600}
-.who{font-size:14.5px;color:var(--muted);text-align:center}
-.who b{color:var(--text)}
-.tag{display:inline-flex;gap:5px;align-items:center;padding:2px 10px;border-radius:99px;font-size:13.5px;font-weight:600;white-space:nowrap}
-.tag-mafia{background:#4b141e;color:#ffb3bc}.tag-town{background:#16304b;color:#b5d4ff}.tag-solo{background:#3a1c52;color:#e0bfff}
-.roster .row{font-weight:500}
-.roster .row.dead span:first-child{text-decoration:line-through;opacity:.5}
-.log{margin-top:8px;font-size:14px;color:#cfc5be;display:flex;flex-direction:column;gap:6px}
+.small{font-size:14px}.muted{color:var(--muted)}
+.red{color:#ff5466}.green{color:var(--green)}
+
+/* buttons */
+.btn{appearance:none;border:0;border-radius:16px;background:linear-gradient(180deg,var(--red2),var(--red));color:#fff;font-weight:700;padding:14px 18px;transition:transform .15s var(--ease),opacity .2s,box-shadow .2s}
+.btn.big{width:100%;padding:18px;font-size:17.5px;box-shadow:0 12px 30px -12px rgba(200,40,58,.85)}
+.btn.ghost{background:#ffffff0b;border:1px solid var(--line);box-shadow:none;color:var(--text)}
+.btn.danger{color:#ff8a95}
+.btn:disabled{opacity:.32;box-shadow:none}
+.btn:not(:disabled):active{transform:scale(.96)}
+.btn.pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(224,70,90,.6)}50%{box-shadow:0 0 0 12px rgba(224,70,90,0)}}
+.bsub{display:block;font-weight:500;font-size:13px;opacity:.75;margin-top:2px}
+.link{background:none;border:0;color:var(--gold);font-weight:600;font-size:15px;padding:8px 4px}
+.link.mut{color:var(--muted)}
+.dock{position:sticky;bottom:0;margin-top:auto;padding-top:22px;padding-bottom:max(4px,env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 40%);z-index:2;display:flex;flex-direction:column;gap:8px}
+body[data-phase=night] .dock{background:linear-gradient(transparent,#0b0a10 40%)}
+
+/* home */
+.home{flex:1;display:flex;flex-direction:column;gap:18px;justify-content:center;padding:10px 0}
+.logo{text-align:center;padding:10px 0 6px}
+.appicon{width:96px;height:96px;border-radius:24px;margin:0 auto 16px;box-shadow:0 18px 40px -14px #000,0 0 0 1px #ffffff10}
+.enter .appicon{animation:popin .7s var(--spring) both}
+.logo h1{font-size:76px;line-height:.9;font-weight:900;font-style:italic;letter-spacing:-.02em}
+.logo .tagline{color:var(--muted);margin-top:12px;font-size:16.5px}
+.sect-h{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px 4px}
+.list{display:flex;flex-direction:column;gap:10px}
+.gcard{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 10px 10px 16px}
+.gmain{flex:1;min-width:0;background:none;border:0;text-align:left;padding:4px 0}
+.gmain b{display:block;font-size:17px}
+.gmain small{display:block;color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.playbtn{width:46px;height:46px;border-radius:14px;border:0;background:linear-gradient(180deg,var(--red2),var(--red));color:#fff;font-size:16px;display:grid;place-items:center;transition:transform .15s;flex:none}
+.playbtn:active{transform:scale(.9)}
+.links{display:flex;justify-content:center;align-items:center;gap:6px;color:var(--muted)}
+
+/* players */
+.addrow{display:flex;gap:8px}
+input{flex:1;min-width:0;width:100%;background:#0b0809;border:1.5px solid var(--line);color:var(--text);border-radius:14px;padding:14px 16px;font:inherit;font-size:17px;transition:border-color .2s}
+input:focus{outline:none;border-color:var(--gold)}
+input::placeholder{color:#6f645e}
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px}
+.prow .num{width:24px;height:24px;border-radius:50%;background:#ffffff10;color:var(--muted);font-size:12.5px;font-weight:700;display:grid;place-items:center;flex:none}
+.prow .pname{flex:1;font-weight:600;font-size:16.5px;word-break:break-word}
+.prow .x{width:38px;height:38px;border-radius:10px;border:0;background:none;color:var(--muted);font-size:22px;line-height:1}
+.prow .x:active{background:#ffffff12}
+.fx-pop{animation:popin .4s var(--spring) both}
+.rowlinks{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.saved{color:var(--green);font-size:14.5px;font-weight:600;padding:8px 4px}
+.empty{text-align:center;color:var(--muted);padding:26px 10px;border:1.5px dashed var(--line);border-radius:16px;font-size:15px}
+
+/* cards & settings */
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px}
+.card h3{font-size:20px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.rchips{display:flex;flex-wrap:wrap;gap:8px}
+.rchip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;font-weight:600;font-size:15px;border:1px solid}
+.rchip b{font-size:16px}
+.t-mafia.rchip{background:#3d1018;border-color:#6e1d2a;color:#ffc0c7}
+.t-town.rchip{background:#132538;border-color:#264466;color:#c2dcff}
+.t-solo.rchip{background:#2e1640;border-color:#53296f;color:#e6c8ff}
+.custom{margin-top:6px}
+.fx-open{animation:rise .35s var(--ease) both}
+.row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);gap:12px}
+.row:first-child{border-top:0}
+.row small{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:1px}
+.step{display:flex;align-items:center;gap:10px;flex:none}
+.step button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:#ffffff0b;font-size:20px;transition:transform .12s}
+.step button:active:not(:disabled){transform:scale(.88)}
+.step button:disabled{opacity:.25}
+.step b{min-width:26px;text-align:center;font-variant-numeric:tabular-nums;font-size:17px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.seg button{background:#0b0809;border:1.5px solid var(--line);border-radius:16px;padding:14px 12px;text-align:left;transition:border-color .2s,background .2s,transform .15s}
+.seg button:active{transform:scale(.97)}
+.seg button .e{font-size:24px;display:block;margin-bottom:4px}
+.seg button b{display:block;font-size:15.5px}
+.seg button small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
+.seg button.on{border-color:var(--gold);background:#2a2015}
+.tog{width:52px;height:32px;border-radius:99px;background:#3a3134;border:0;position:relative;flex:none;transition:background .25s}
+.tog::after{content:'';position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .25s var(--spring);box-shadow:0 2px 6px #0006}
+.tog.on{background:var(--red)}.tog.on::after{left:24px}
+.err{color:#ff8a95;text-align:center;font-weight:600;font-size:15px}
+
+/* name grid */
+.head{padding-top:4px}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nm{position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 10px;font-weight:700;font-size:17.5px;word-break:break-word;transition:transform .15s var(--ease),border-color .2s,opacity .3s}
+.nm:active:not(:disabled){transform:scale(.94);border-color:var(--gold)}
+.nm.done{opacity:.3;border-style:dashed}
+.nm.done span{text-decoration:line-through}
+.nm i{position:absolute;top:8px;right:10px;font-style:normal;color:var(--green);font-size:14px}
+.progress{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13.5px;font-weight:600}
+.progress .bar{flex:1;height:6px;border-radius:9px;background:#ffffff12;overflow:hidden}
+.progress .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f3d49b);border-radius:9px;transition:width .6s var(--ease)}
+
+/* flip card */
+.flip{perspective:1400px;height:410px;cursor:pointer;-webkit-user-select:none;user-select:none;flex:none}
+.flip.sm{height:236px}
+.flip.flipped{cursor:default}
+.flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d}
+.flipped .flip-inner{transform:rotateY(180deg)}
+.fx-flip .flip-inner{animation:flip .8s var(--spring) both}
+@keyframes flip{from{transform:rotateY(0)}to{transform:rotateY(180deg)}}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 20px;text-align:center;border:1px solid var(--line);overflow:hidden}
+.front{background:repeating-linear-gradient(45deg,#ffffff05 0 10px,transparent 10px 20px),linear-gradient(160deg,#2a1d20,#140f11);border-color:#4a3a2c;box-shadow:inset 0 0 0 6px #140f11,inset 0 0 0 7px #d9b26f55}
+.front img{width:84px;height:84px;border-radius:20px;margin-bottom:14px;box-shadow:0 10px 26px -8px #000}
+.flip.sm .front img{width:58px;height:58px;border-radius:14px;margin-bottom:8px}
+.fname{font-size:clamp(34px,10vw,46px);font-weight:900;line-height:1.05;word-break:break-word}
+.flip.sm .fname{font-size:34px}
+.fhint{margin-top:12px;color:var(--gold);font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.fhint::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--gold);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{50%{opacity:.2}}
+.back{transform:rotateY(180deg)}
+.face.t-mafia{background:radial-gradient(120% 80% at 50% 0%,#7a1626,#2a0c12 70%);border-color:#8e2434}
+.face.t-town{background:radial-gradient(120% 80% at 50% 0%,#1d3d5e,#0f1724 70%);border-color:#2f5683}
+.face.t-solo{background:radial-gradient(120% 80% at 50% 0%,#4e2470,#170f20 70%);border-color:#6d3a95}
+.ricon{font-size:56px;line-height:1;filter:drop-shadow(0 6px 14px #0008)}
+.flip.sm .ricon{font-size:40px}
+.rname{font-size:48px;font-weight:900;line-height:1.05;margin:2px 0 10px}
+.flip.sm .rname{font-size:36px;margin-bottom:4px}
+.face p{color:#e5dbd4;max-width:34ch;font-size:15.5px}
+.crew{margin-top:14px;background:#0000004a;border-radius:12px;padding:9px 12px;font-size:14.5px}
+.below{display:flex;flex-direction:column;gap:12px}
+.fx-flip~.below{animation:rise .5s var(--ease) .45s both}
+.prompt{font-size:22px;text-align:center}
+.hint{text-align:center;color:var(--muted);font-size:13.5px;margin-top:-6px}
+.targets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tgt{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px 10px;font-weight:700;font-size:16.5px;word-break:break-word;transition:transform .15s var(--ease),border-color .2s,background .2s,color .2s}
+.tgt:active{transform:scale(.95)}
+.tgt.on{border-color:var(--gold);background:#2c2116;color:#ffe3b0;transform:scale(1.02)}
+.mates{background:#3d1018;border:1px solid #6e1d2a;border-radius:12px;padding:9px 12px;font-size:14px;color:#ffd0d6;text-align:center}
+
+/* big moments */
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:10px 0;min-height:46vh}
+.bigname{font-size:clamp(46px,14vw,70px);font-weight:900;line-height:1.02;word-break:break-word}
+.enter .blur{animation:blurin .9s var(--ease) .25s both}
+.enter .late{animation:rise .5s var(--ease) 1s both}
+.lead{font-size:18px;color:#e2d8d1;max-width:30ch}
+.moon{width:92px;height:92px;border-radius:50%;box-shadow:-22px 8px 0 0 #f1e6c8;transform:translateX(11px);margin-bottom:12px;filter:drop-shadow(0 0 22px #f1e6c866)}
+.enter .moon{animation:fadein 1.2s var(--ease) both}
+.sun{width:86px;height:86px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#ffe9a8,#f0a33a);box-shadow:0 0 50px #f0a33a88;margin-bottom:12px;flex:none}
+.enter .sun{animation:sunrise 1.1s var(--ease) both}
+@keyframes sunrise{from{transform:translateY(60px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+.glyph{font-size:58px;line-height:1;margin-bottom:6px}
+.enter .glyph{animation:popin .7s var(--spring) both}
+.tag{display:inline-flex;gap:6px;align-items:center;padding:4px 12px;border-radius:99px;font-size:15px;font-weight:700;white-space:nowrap;border:1px solid}
+.tag-mafia{background:#3d1018;border-color:#6e1d2a;color:#ffc0c7}.tag-town{background:#132538;border-color:#264466;color:#c2dcff}.tag-solo{background:#2e1640;border-color:#53296f;color:#e6c8ff}
+
+/* timer */
+.timer{position:relative;width:min(250px,64vw);aspect-ratio:1;margin:6px auto 4px;flex:none}
+.timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer .trk{fill:none;stroke:#ffffff10;stroke-width:10}
+.timer .prog{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .3s linear,stroke .3s}
+.timer.warn .prog,.timer.up .prog{stroke:#ff5466}
+.tcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tnum{font-size:62px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.timer.up .tnum{font-size:34px;color:#ff5466}
+.timer.warn .tnum{color:#ff5466;animation:tick 1s ease-in-out infinite}
+@keyframes tick{50%{transform:scale(1.06)}}
+.tsub{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:4px}
+.trio{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.chip{background:#ffffff0c;border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-weight:600;font-size:14.5px}
+.chip.dead{opacity:.4;text-decoration:line-through}
+
+/* narrator */
+.script{border-left:3px solid var(--gold);padding:12px 16px;background:#2a20155c;border-radius:0 16px 16px 0;font-style:italic;font-size:21px;line-height:1.35}
+.script small{display:block;font-family:Inter,sans-serif;font-style:normal;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;font-weight:700}
+.who{font-size:14.5px;color:var(--muted);text-align:center}.who b{color:var(--text)}
+
+/* results */
+.win{text-align:center;padding:24px 0 4px}
+.win .bigname{font-size:clamp(50px,15vw,76px)}
+.roster{display:flex;flex-direction:column}
+.roster .row{padding:10px 0}
+.roster .row.dead>span:first-child{text-decoration:line-through;opacity:.5}
+.roster .row>span:first-child{font-weight:600}
 details summary{cursor:pointer;font-family:'Playfair Display',serif;font-weight:700;font-size:19px;list-style:none}
 details summary::-webkit-details-marker{display:none}
 details summary::after{content:'+';float:right;color:var(--gold);font-family:Inter}
 details[open] summary::after{content:'−'}
-.how p,.how li{font-size:14.5px;color:#d3c9c2;margin-top:8px}
-.how ul{padding-left:18px}
-.win{text-align:center;padding:30px 0 6px}
-.win .bigname{font-size:clamp(46px,14vw,72px)}
-.grow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
-.card-h+.grow{border-top:0}
-.gload{flex:1;min-width:0;text-align:left;background:none;border:0;padding:2px 0}
-.gload b{display:block;font-size:16px}
-.gload small{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gload.on b::after{content:' · loaded';color:var(--gold);font-weight:500;font-size:13px}
-.install{display:flex;align-items:center;gap:14px;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
-.install img{width:52px;height:52px;border-radius:12px;flex:none}
-.install b{display:block;font-size:16px}.install small{color:var(--muted);font-size:13.5px}
-.veil{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;z-index:9;animation:fade .2s}
-@keyframes fade{from{opacity:0}}
-.sheet{background:#1a1517;border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:520px;padding:18px 16px max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;max-height:88vh;overflow:auto}
-.sheet h3{font-size:24px}
-.lbl{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-top:4px}
+.log{margin-top:10px;font-size:14px;color:#d6ccc5;display:flex;flex-direction:column;gap:8px}
+
+/* sheets */
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.66);display:flex;align-items:flex-end;justify-content:center;z-index:9;animation:fadein .25s both;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet{background:#1c1618;border:1px solid var(--line);border-bottom:0;border-radius:26px 26px 0 0;width:100%;max-width:520px;padding:10px 18px max(22px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:90vh;max-height:90dvh;overflow:auto;animation:sheetup .42s var(--ease) both}
+@keyframes sheetup{from{transform:translateY(100%)}to{transform:none}}
+.grab{width:42px;height:5px;border-radius:9px;background:#ffffff26;margin:2px auto 4px;flex:none}
+.sheet h3{font-size:25px}
+.sheet form{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-top:4px}
+.pchips{display:flex;flex-wrap:wrap;gap:8px}
+.pchip{display:inline-flex;align-items:center;gap:2px;background:#ffffff0c;border:1px solid var(--line);border-radius:99px;padding:5px 5px 5px 13px;font-weight:600;font-size:15px}
+.pchip button{background:none;border:0;color:var(--muted);font-size:19px;width:28px;height:28px;border-radius:50%;line-height:1}
 .warnbox{background:#3b1218;border:1px solid #7a1f2c;color:#ffc2c9;border-radius:12px;padding:10px 12px;font-size:14px}
-.infobox{background:#251d14;border:1px solid #5a4423;color:#f3dcb4;border-radius:12px;padding:10px 12px;font-size:14px}
+.infobox{background:#2a2015;border:1px solid #5a4423;color:#f3dcb4;border-radius:12px;padding:10px 12px;font-size:14px}
 .appid{display:flex;gap:14px;align-items:center}
-.appid img{width:64px;height:64px;border-radius:15px;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+.appid img{width:62px;height:62px;border-radius:15px;box-shadow:0 6px 18px rgba(0,0,0,.6)}
 .appid b{font-family:'Playfair Display',serif;font-size:26px;display:block;line-height:1.1}
 .appid small{color:var(--muted);font-size:13.5px}
-.steps{padding-left:24px;display:flex;flex-direction:column;gap:9px;font-size:15.5px;color:#e6ddd6}
+.isteps{list-style:none;display:flex;flex-direction:column;gap:12px;margin:4px 0}
+.isteps li{display:flex;align-items:center;gap:14px;font-size:17px;line-height:1.35}
+.isteps .n{width:30px;height:30px;border-radius:50%;background:#d9b26f22;border:1px solid #d9b26f55;color:var(--gold);font-weight:800;display:grid;place-items:center;flex:none;font-size:15px}
+.isteps small{display:block;color:var(--muted);font-size:13.5px}
+.ico{display:inline-block;padding:0 6px;border-radius:6px;background:#ffffff14;font-size:14px}
+.steps{padding-left:24px;display:flex;flex-direction:column;gap:10px;font-size:15.5px;color:#e8dfd8}
 .steps li::marker{color:var(--gold);font-weight:700}
-.mini{background:#251e21;border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600}
+.mini{background:#ffffff0c;border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:13px;font-weight:600;transition:background .2s,border-color .2s}
 .mini.on{border-color:var(--gold);color:#ffe3b0;background:#2c2116}
-.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#f2ece6;color:#14100f;padding:10px 18px;border-radius:99px;font-weight:600;font-size:14px;z-index:20;animation:fade .2s;box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap}
+.howlist{display:flex;flex-direction:column;gap:14px}
+.howlist div{display:flex;gap:14px;align-items:flex-start}
+.howlist .e{font-size:26px;line-height:1.2;flex:none;width:34px;text-align:center}
+.howlist p{font-size:15.5px;color:#e2d8d1}
+.rolelist{display:flex;flex-direction:column;gap:8px}
+.rolelist div{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:#d6ccc5}
+.rolelist b{color:var(--text)}
+
+/* online mode */
+.codechip{font-family:ui-monospace,Menlo,monospace;font-weight:800;letter-spacing:.12em;font-size:13px;padding:6px 9px;border-radius:10px;background:#d9b26f1f;color:var(--gold);border:1px solid #d9b26f44;align-self:center}
+.lobbyhead{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.bigcode{font-family:ui-monospace,Menlo,monospace;font-size:64px;font-weight:800;letter-spacing:.14em;line-height:1;color:var(--text);text-shadow:0 0 30px #d9b26f40}
+.enter .bigcode{animation:popin .6s var(--spring) .1s both}
+.qr{background:#f3ede7;border-radius:16px;padding:8px;width:156px;height:156px}
+.qr svg{width:100%;height:100%;display:block}
+.dot{width:10px;height:10px;border-radius:50%;background:#5a4f4b;flex:none;margin-right:2px}
+.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.col{display:flex;flex-direction:column;gap:8px}
+.codein{font-family:ui-monospace,Menlo,monospace;font-size:30px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;text-align:center}
+.spinner{width:46px;height:46px;border-radius:50%;border:4px solid #ffffff1a;border-top-color:var(--gold);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.waitbox{text-align:center;color:var(--green);font-weight:700;font-size:17px;padding:10px;border:1px solid #4fbf8744;background:#4fbf8714;border-radius:14px}
+.votes{display:flex;flex-direction:column;gap:6px}
+.votes div{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;font-size:15px}
+.votes .arrow{color:var(--muted)}
+.votes b{text-align:right}
+.toast{position:fixed;left:50%;bottom:max(26px,calc(env(safe-area-inset-bottom) + 10px));transform:translateX(-50%);background:#f3ede7;color:#14100f;padding:11px 18px;border-radius:99px;font-weight:700;font-size:14.5px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.5);white-space:nowrap;animation:toastin .4s var(--spring) both}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body data-phase="neutral">
+<div class="bg bg-neutral"></div><div class="bg bg-night"></div><div class="bg bg-day"></div>
 <div id="app"></div>
 <script>
 (function(){
+'use strict';
 const ROLES={
-  mafia:{name:'Mafia',icon:'🔪',team:'mafia',desc:'Each night your crew picks one person to eliminate. By day, blend in and push suspicion onto someone else.'},
-  doctor:{name:'Doctor',icon:'🩺',team:'town',desc:'Each night, choose one person to protect. If the Mafia targets them, they live. You can protect yourself.'},
-  detective:{name:'Detective',icon:'🔍',team:'town',desc:'Each night, investigate one person and learn if they are Mafia. Share what you know carefully — the Mafia will come for you.'},
-  jester:{name:'Jester',icon:'🃏',team:'solo',desc:'You win alone if the town votes you out. Act just suspicious enough to get lynched.'},
-  villager:{name:'Villager',icon:'🏠',team:'town',desc:'No night powers, just your instincts. Find the Mafia and vote them out before it is too late.'}
+  mafia:{name:'Mafia',icon:'🔪',team:'mafia',desc:'Each night your crew picks someone to eliminate. By day, blend in and point fingers at others.',short:'Pick someone to eliminate.'},
+  doctor:{name:'Doctor',icon:'🩺',team:'town',desc:'Each night, protect one person. If the Mafia picks them, they survive. You can protect yourself.',short:'Protect one person tonight.'},
+  detective:{name:'Detective',icon:'🔍',team:'town',desc:'Each night, check one person to learn if they are Mafia. Share what you learn — carefully.',short:'Check if someone is Mafia.'},
+  jester:{name:'Jester',icon:'🃏',team:'solo',desc:'You win if the town votes you out. Act just suspicious enough to get caught.',short:'Get voted out to win.'},
+  villager:{name:'Villager',icon:'🏠',team:'town',desc:'No special powers — just your gut. Find the Mafia and vote them out.',short:'Tap anyone. Find the Mafia by day.'}
 };
-const KEY='mafia-party-v1',GKEY='mafia-groups-v1';
+const KEY='mafia-v2',OLDKEY='mafia-party-v1',GKEY='mafia-groups-v1';
 const app=document.getElementById('app');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function rnd(n){try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}catch(e){return Math.floor(Math.random()*n)}}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
-function fresh(){return{screen:'setup',names:[],cfg:{mafia:1,doctor:1,detective:0,jester:0,mode:'pass',reveal:true,mins:3,manual:false,voice:true},players:[],round:0,log:[],pick:null,group:null}}
+function haptic(ms){try{navigator.vibrate&&navigator.vibrate(ms||8)}catch(e){}}
+const GAME=['reveal','narrready','night','morning','day','vote','verdict','over'];
+
+function fresh(){return{screen:'home',names:[],cfg:{mafia:1,doctor:1,detective:0,jester:0,mode:'phone',reveal:true,mins:3,manual:false,voice:true,custom:false},players:[],round:0,log:[],pick:null,group:null}}
 let S=null;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!S.cfg||!Array.isArray(S.names))S=fresh();
-if(S.cfg.voice===undefined)S.cfg.voice=true;
-S.menu=null;S.confirm=null;S.edit=null;
-if(S.screen==='reveal'&&!Array.isArray(S.revealed)){S.revealed=[];S.shown=false}
-if(S.screen==='night'&&S.night&&S.cfg.mode!=='narrator'&&!Array.isArray(S.night.done)){S.night.done=[];S.night.stage='grid';S.night.cur=null}
+if(!S||!S.cfg||!Array.isArray(S.names)){
+  S=fresh();
+  try{const o=JSON.parse(localStorage.getItem(OLDKEY));if(o&&Array.isArray(o.names)){S.names=o.names.slice(0,20);if(o.cfg){S.cfg.reveal=o.cfg.reveal!==false;S.cfg.mins=o.cfg.mins||3;S.cfg.mode=o.cfg.mode==='narrator'?'person':'phone';if(o.cfg.voice===false)S.cfg.voice=false}}}catch(e){}
+}
+if(GAME.includes(S.screen)&&!(S.players&&S.players.length))S.screen='home';
+Object.assign(S,{menu:null,confirm:null,edit:null,fx:null});
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let G=[];try{G=JSON.parse(localStorage.getItem(GKEY))||[]}catch(e){}
 if(!Array.isArray(G))G=[];
+G=G.filter(g=>g&&g.id&&Array.isArray(g.names));
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}}
 
 let toastT=null;
-function toast(msg){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el)}
-  el.textContent=msg;el.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{el.style.display='none'},2200)}
+function toast(msg){let el=document.getElementById('toast');if(el)el.remove();el=document.createElement('div');el.id='toast';el.className='toast';el.textContent=msg;document.body.appendChild(el);
+  clearTimeout(toastT);toastT=setTimeout(()=>{el.style.transition='opacity .3s';el.style.opacity='0';setTimeout(()=>el.remove(),320)},2000)}
 
 /* ---------- voice narrator ---------- */
 const synth=('speechSynthesis' in window)?window.speechSynthesis:null;
 const canVoice=()=>!!synth;
 let voicePick=null,lastSaid='',toSay=null;
 function pickVoice(){if(!synth)return null;if(voicePick)return voicePick;
-  const vs=synth.getVoices()||[],en=vs.filter(v=>/^en([-_]|$)/i.test(v.lang));
+  let vs=[];try{vs=synth.getVoices()||[]}catch(e){}
+  const en=vs.filter(v=>/^en([-_]|$)/i.test(v.lang));
   const pref=['Daniel','Arthur','Samantha','Google UK English Male','Google US English','Microsoft Guy','Microsoft Aria','Alex','Karen','Moira'];
   for(const p of pref){const v=en.find(v=>v.name.indexOf(p)===0);if(v)return voicePick=v}
   return voicePick=en.find(v=>v.localService)||en[0]||null}
 if(synth){try{synth.addEventListener('voiceschanged',()=>{voicePick=null})}catch(e){}}
-function say(text,force){if(!text||!synth)return;if(!force&&(!S.cfg.voice||S.cfg.mode!=='pass'))return;
+function say(text,force){if(!text||!synth)return;if(!force&&(!S.cfg.voice||S.cfg.mode!=='phone'))return;
   lastSaid=text;
   try{synth.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=.95;u.pitch=.95;const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}else u.lang='en-US';synth.speak(u)}catch(e){}}
 function hush(){try{synth&&synth.cancel()}catch(e){}}
@@ -193,19 +364,20 @@ const nightSay=()=>`Night ${S.round}. Everyone, close your eyes. Pass the phone 
 const dealSay='Pass the phone around the circle. When it reaches you, tap your name to see your secret role. Keep it to yourself.';
 
 /* ---------- add to home screen ---------- */
+const SAFARI_ONLY='On iPhone this only works in Safari.';
 const INST={
-  'ios-safari':{short:'iPhone · Safari',label:'iPhone or iPad · Safari',steps:['Tap the <b>Share</b> button <span aria-hidden="true">(□↑)</span>. On newer iPhones it is inside the <b>⋯</b> menu next to the address bar.','Scroll down and tap <b>Add to Home Screen</b>. Don\'t see it? Tap <b>Edit Actions</b> and add it.','Keep <b>Open as Web App</b> switched on and check the name says <b>Mafia</b>.','Tap <b>Add</b>. The hat icon appears on your Home Screen.']},
-  'ios-chrome':{short:'iPhone · Chrome',label:'iPhone or iPad · Chrome',steps:['Tap the <b>Share</b> button <span aria-hidden="true">(□↑)</span> in the address bar (or <b>⋯</b> → <b>Share</b>).','Tap <b>Add to Home Screen</b>.','Check the name says <b>Mafia</b> and tap <b>Add</b>.']},
-  'ios-other':{short:'iPhone · Firefox/Edge',label:'iPhone or iPad · Firefox or Edge',steps:['Tap the menu (<b>☰</b> or <b>⋯</b>) at the bottom of the screen.','Tap <b>Share</b>, then <b>Add to Home Screen</b>.','Check the name says <b>Mafia</b> and tap <b>Add</b>.']},
-  'ios-inapp':{short:'iPhone · inside an app',label:'iPhone · inside another app',note:'You\'re viewing this inside another app (like Instagram, Snapchat or Claude), which can\'t add it to your Home Screen.',steps:['Tap the <b>⋯</b> or share button and choose <b>Open in Safari</b> — or copy the link and paste it into Safari.','In Safari, tap <b>Share</b> <span aria-hidden="true">(□↑)</span> (inside <b>⋯</b> on newer iPhones).','Tap <b>Add to Home Screen</b>, keep the name <b>Mafia</b>, and tap <b>Add</b>.']},
-  'android-chrome':{short:'Android · Chrome',label:'Android · Chrome',steps:['Tap the <b>⋮</b> menu in the top-right corner.','Tap <b>Add to Home screen</b> (it may say <b>Install app</b>).','Tap <b>Install</b> or <b>Add</b>. The hat icon appears on your Home screen.']},
-  'samsung':{short:'Samsung Internet',label:'Samsung Internet',steps:['Tap the <b>☰</b> menu at the bottom.','Tap <b>Add page to</b>, then <b>Home screen</b>.','Tap <b>Add</b>.']},
-  'android-other':{short:'Android · Firefox/Edge',label:'Android · Firefox or Edge',steps:['Tap the menu (<b>⋮</b> or <b>⋯</b>).','Tap <b>Install</b> or <b>Add to Home screen</b> (in Edge: <b>Add to phone</b>).','Tap <b>Add</b>.']},
-  'android-inapp':{short:'Android · inside an app',label:'Android · inside another app',note:'You\'re viewing this inside another app, which can\'t add it to your Home screen.',steps:['Tap <b>⋮</b> and choose <b>Open in Chrome</b> (or <b>Open in browser</b>) — or copy the link into Chrome.','In Chrome, tap <b>⋮</b> → <b>Add to Home screen</b> or <b>Install app</b>.','Tap <b>Install</b>.']},
-  'desktop-chrome':{short:'Computer · Chrome',label:'Computer · Chrome',steps:['Click the install icon at the right end of the address bar — or click <b>⋮</b> → <b>Cast, save, and share</b> → <b>Install page as app</b>.','Click <b>Install</b>. Mafia opens in its own window and shows up with your apps.']},
-  'desktop-edge':{short:'Computer · Edge',label:'Computer · Edge',steps:['Click <b>⋯</b> → <b>Apps</b> → <b>Install this site as an app</b>.','Click <b>Install</b>.']},
-  'desktop-safari':{short:'Mac · Safari',label:'Mac · Safari',steps:['Click <b>File</b> → <b>Add to Dock</b> (or the Share button → <b>Add to Dock</b>).','Check the name says <b>Mafia</b> and click <b>Add</b>.']},
-  'desktop-firefox':{short:'Computer · Firefox',label:'Computer · Firefox',note:'Firefox on computers can\'t install web apps.',steps:['Bookmark this page with <b>Ctrl+D</b> (<b>⌘+D</b> on Mac), or open it in Chrome, Edge or Safari to install it.']}
+  'ios-safari':{steps:['Tap <b>Share</b> <span class="ico">□↑</span> <small>(inside <b>⋯</b> on newer iPhones)</small>','Tap <b>Add to Home Screen</b>','Tap <b>Add</b>']},
+  'ios-chrome':{note:SAFARI_ONLY,copy:true,steps:['Tap <b>Copy link</b> below','Paste it into <b>Safari</b>','Tap <b>Share</b> <span class="ico">□↑</span> → <b>Add to Home Screen</b>']},
+  'ios-other':{note:SAFARI_ONLY,copy:true,steps:['Tap <b>Copy link</b> below','Paste it into <b>Safari</b>','Tap <b>Share</b> <span class="ico">□↑</span> → <b>Add to Home Screen</b>']},
+  'ios-inapp':{note:SAFARI_ONLY,copy:true,steps:['Tap <b>Copy link</b> below','Paste it into <b>Safari</b>','Tap <b>Share</b> <span class="ico">□↑</span> → <b>Add to Home Screen</b>']},
+  'android-chrome':{steps:['Tap <b>⋮</b> in the top corner','Tap <b>Add to Home screen</b> or <b>Install app</b>','Tap <b>Install</b>']},
+  'samsung':{steps:['Tap <b>☰</b> at the bottom','Tap <b>Add page to</b> → <b>Home screen</b>','Tap <b>Add</b>']},
+  'android-other':{steps:['Tap the menu <b>⋮</b>','Tap <b>Install</b> or <b>Add to Home screen</b>','Tap <b>Add</b>']},
+  'android-inapp':{note:'Open this in Chrome first.',copy:true,steps:['Tap <b>Copy link</b> below','Paste it into <b>Chrome</b>','Tap <b>⋮</b> → <b>Add to Home screen</b>']},
+  'desktop-chrome':{steps:['Click the install icon <span class="ico">⊕</span> in the address bar','Click <b>Install</b>']},
+  'desktop-edge':{steps:['Click <b>⋯</b> → <b>Apps</b> → <b>Install this site as an app</b>','Click <b>Install</b>']},
+  'desktop-safari':{steps:['Click <b>File</b> → <b>Add to Dock</b>','Click <b>Add</b>']},
+  'desktop-firefox':{note:'Firefox can\'t install apps.',steps:['Open this page in Chrome, Edge or Safari instead']}
 };
 function detect(){const u=navigator.userAgent||'';
   const iOS=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1);
@@ -216,6 +388,7 @@ function detect(){const u=navigator.userAgent||'';
 const DETECTED=detect();
 const standalone=(()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}})();
 
+/* ---------- helpers ---------- */
 const P=i=>S.players[i];
 const aliveIdx=()=>S.players.map((p,i)=>i).filter(i=>S.players[i].alive);
 const tag=r=>`<span class="tag tag-${ROLES[r].team}">${ROLES[r].icon} ${ROLES[r].name}</span>`;
@@ -223,188 +396,234 @@ const mafiaMax=n=>Math.max(1,Math.ceil(n/2)-1);
 function autoCfg(){const c=S.cfg,n=S.names.length;if(c.manual)return;
   c.mafia=n<=5?1:n<=8?2:n<=11?3:Math.floor(n/4);c.doctor=1;c.detective=n>=6?1:0;c.jester=0;}
 function setupError(){const c=S.cfg,n=S.names.length,sp=c.mafia+c.doctor+c.detective+c.jester;
-  if(n<4)return`Add at least 4 players (${n}/4)`;
-  if(sp>n)return'More special roles than players';
-  if(c.mafia*2>=n)return'Too many Mafia for this group';
+  if(n<4)return'You need at least 4 players';
+  if(sp>n)return'More special roles than players — remove one';
+  if(c.mafia*2>=n)return'Too many Mafia for this many players';
   return''}
 function checkWin(){const a=S.players.filter(p=>p.alive),m=a.filter(p=>p.role==='mafia').length;
   if(m===0)return'town';if(m>=a.length-m)return'mafia';return null}
-function cleanName(raw){return String(raw||'').trim().replace(/\s+/g,' ').slice(0,18)}
-function addTo(list,raw){let nm=cleanName(raw);if(!nm||list.length>=20)return false;
-  const base=nm;let k=2;while(list.some(x=>x.toLowerCase()===nm.toLowerCase()))nm=base+' '+(k++);list.push(nm);return true}
+function cleanName(raw,max){return String(raw||'').trim().replace(/\s+/g,' ').slice(0,max||18)}
+function addTo(list,raw){let nm=cleanName(raw);if(!nm)return'';if(list.length>=20){toast('20 players max');return''}
+  const base=nm;let k=2;while(list.some(x=>x.toLowerCase()===nm.toLowerCase()))nm=base+' '+(k++);list.push(nm);return nm}
 const sameNames=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
+function phaseOf(){if(S.screen==='online')return window.MafiaOnline?window.MafiaOnline.phase():'neutral';if(['reveal','narrready','night'].includes(S.screen))return'night';if(['morning','day','vote','verdict'].includes(S.screen))return'day';return'neutral'}
 
-/* ---------- views ---------- */
+/* ---------- shared pieces ---------- */
+function nav(title,back){return`<div class="top"><button class="backbtn" data-a="go" data-v="${back}"><span>‹</span> Back</button><span class="ttl">${title}</span><span style="width:64px"></span></div>`}
+function gameTop(){const ph=phaseOf();
+  const label={reveal:'Secret roles',narrready:'Ready',night:'Night '+S.round,morning:'Day '+S.round,day:'Day '+S.round,vote:'Day '+S.round,verdict:'Day '+S.round}[S.screen]||'';
+  const v=S.cfg.mode==='phone'&&canVoice();
+  return`<div class="top"><span class="phase">${ph==='night'?'☾':'☀'}&nbsp; ${label}</span><span class="tb">${v?`<button class="iconbtn" data-a="voice" aria-label="${S.cfg.voice?'Mute narrator':'Turn on narrator'}">${S.cfg.voice?'🔊':'🔇'}</button>`:''}<button class="iconbtn" data-a="menu" aria-label="Menu">⋯</button></span></div>`}
+function nameGrid(list,done,title,sub){
+  return`<div class="head c"><h2 class="title">${title}</h2><p class="subtle">${sub}</p></div>
+  <div class="names stagger">${list.map((j,k)=>{const d=done.includes(j);return`<button class="nm ${d?'done':''}" style="--i:${k}" data-a="self" data-i="${j}" ${d?'disabled':''}><span>${esc(P(j).name)}</span>${d?'<i>✓</i>':''}</button>`}).join('')}</div>
+  <div class="progress"><div class="bar"><i style="width:${list.length?done.length/list.length*100:0}%"></i></div><span>${done.length} of ${list.length} done</span></div>`}
+function flipCard(i,face,below,small){const p=P(i),fl=!!S.flipped,team=ROLES[p.role].team;
+  return`<div class="flip ${small?'sm':''} ${fl?'flipped':''} ${fl&&S.fx==='flip'?'fx-flip':''}" ${fl?'':'data-a="flip" role="button" aria-label="Reveal"'}>
+    <div class="flip-inner">
+      <div class="face front"><img src="icon-192.png" alt=""><div class="fname">${esc(p.name)}</div><div class="fhint">Tap to reveal</div></div>
+      <div class="face back t-${team}">${fl?face:''}</div>
+    </div></div>
+  ${fl?`<div class="below">${below}</div>`:`<button class="link mut c" data-a="unpick">Not ${esc(p.name)}? Go back</button>`}`}
+function targets(list){return`<div class="targets">${list.map(j=>`<button class="tgt ${S.pick===j?'on':''}" data-a="pick" data-i="${j}">${esc(P(j).name)}</button>`).join('')}</div>`}
+
+/* ---------- screens ---------- */
+function vHome(){
+  return`<div class="home">
+  <div class="logo"><img class="appicon" src="icon-192.png" alt=""><h1>Mafia</h1><p class="tagline">Lies, secrets and one phone.</p></div>
+  ${S.names.length?`<div><div class="sect-h">Last players</div><div class="gcard last"><button class="gmain" data-a="lastplay"><b>${S.names.length} players</b><small>${S.names.map(esc).join(', ')}</small></button><button class="iconbtn" data-a="lastclear" aria-label="Clear last players">${S.confirm==='lastclear'?'✓?':'✕'}</button><button class="playbtn" data-a="lastplay" aria-label="Play with last players">▶</button></div>${S.confirm==='lastclear'?'<p class="small muted c" style="margin-top:6px">Tap ✓? again to clear</p>':''}</div>`:''}
+  <button class="btn big ${S.names.length?'ghost':''}" data-a="newgame">${S.names.length?'New game — edit players':'New game'}<small class="bsub">One phone, passed around</small></button>
+  <button class="btn big ghost" data-a="online">📱📱 Everyone's own phone<small class="bsub">Host a game or join with a code</small></button>
+  ${G.length?`<div><div class="sect-h">Your groups</div><div class="list stagger">${G.map((g,k)=>`<div class="gcard" style="--i:${k}"><button class="gmain" data-a="gplay" data-id="${g.id}"><b>${esc(g.name)}</b><small>${g.names.length} players · ${g.names.map(esc).join(', ')}</small></button><button class="iconbtn" data-a="gedit" data-id="${g.id}" aria-label="Edit ${esc(g.name)}">✎</button><button class="playbtn" data-a="gplay" data-id="${g.id}" aria-label="Play with ${esc(g.name)}">▶</button></div>`).join('')}</div></div>`:''}
+  <div class="links"><button class="link" data-a="how">How to play</button>${standalone?'':`<span>·</span><button class="link" data-a="install">Add to Home Screen</button>`}</div>
+  </div>`}
+
+function vPlayers(){const n=S.names.length,grp=G.find(g=>g.id===S.group),need=4-n;
+  let save='';
+  if(n){if(grp&&sameNames(grp.names,S.names))save=`<span class="saved">✓ Saved as “${esc(grp.name)}”</span>`;
+    else if(grp)save=`<button class="link" data-a="gupdate">Save changes to “${esc(grp.name)}”</button>`;
+    else save=`<button class="link" data-a="gsave">💾 Save as a group</button>`}
+  return nav('Players','home')+`<div><h2 class="title">Who's playing?</h2><p class="subtle">${need>0?`Add ${need} more ${need===1?'person':'people'} to start.`:`${n} players${n>=20?' — that\'s the max':''}`}</p></div>
+  <form id="addf" class="addrow"><input id="nm" maxlength="18" placeholder="Type a name" autocomplete="off" autocapitalize="words" enterkeyhint="done" aria-label="Player name"><button class="btn" type="submit">Add</button></form>
+  ${n?`<div class="plist">${S.names.map((x,i)=>`<div class="prow ${S.fx==='pop:'+x?'fx-pop':''}"><span class="num">${i+1}</span><span class="pname">${esc(x)}</span><button class="x" data-a="rm" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></div>`).join('')}</div>
+  <div class="rowlinks">${save}<button class="link mut" data-a="clear">${S.confirm==='clear'?'Tap again to clear':'Clear all'}</button></div>`
+  :`<div class="empty">No players yet.<br>Add everyone who's playing.</div>`}
+  <div class="dock"><button class="btn big" data-a="tosettings" ${n<4?'disabled':''}>${n<4?'Add at least 4 players':'Next'}</button></div>`}
+
+function rchip(r,n){if(!n)return'';const R=ROLES[r];return`<span class="rchip t-${R.team}">${R.icon} <b>${n}</b> ${R.name}${n>1&&r!=='mafia'?'s':''}</span>`}
 function stepper(k,label,icon,min,max){const v=S.cfg[k];
   return`<div class="row"><span>${icon} ${label}</span><div class="step"><button data-a="dec" data-k="${k}" ${v<=min?'disabled':''} aria-label="Fewer ${label}">−</button><b>${v}</b><button data-a="inc" data-k="${k}" ${v>=max?'disabled':''} aria-label="More ${label}">+</button></div></div>`}
-function vSetup(){
-  const c=S.cfg,n=S.names.length,vil=n-(c.mafia+c.doctor+c.detective+c.jester),err=setupError();
-  const active=G.find(g=>g.id===S.group);
-  return`<header class="hero"><img src="icon-192.png" alt=""><div class="kicker">One phone · 4–20 players</div><h1>Mafia</h1><p class="sub">Deal secret roles, survive the night, and vote out the killers before they take the town.</p></header>
-  ${G.length?`<section class="card"><div class="card-h"><h2>Saved groups</h2><span class="pill">${G.length}</span></div>
-    ${G.map(g=>`<div class="grow"><button class="gload ${g.id===S.group&&sameNames(g.names,S.names)?'on':''}" data-a="gload" data-id="${g.id}"><b>${esc(g.name)}</b><small>${g.names.length} players · ${g.names.map(esc).join(', ')}</small></button><button class="btn ghost sm" data-a="gedit" data-id="${g.id}">Edit</button></div>`).join('')}</section>`:''}
-  <section class="card"><div class="card-h"><h2>Players</h2><span class="pill">${n}</span></div>
-    <form id="addf" class="addrow"><input id="nm" maxlength="18" placeholder="Add a name" autocomplete="off" enterkeyhint="done" aria-label="Player name"><button class="btn" type="submit">Add</button></form>
-    <div class="chips">${n?S.names.map((x,i)=>`<span class="chip">${esc(x)}<button data-a="rm" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></span>`).join(''):'<p class="muted small">Add everyone who&#39;s playing, or load a saved group. Order doesn&#39;t matter — each person taps their own name when the phone reaches them.</p>'}</div>
-    ${n?`<div class="btnrow"><button class="btn ghost sm" data-a="gsave">💾 ${active&&!sameNames(active.names,S.names)?'Update or save group':'Save as group'}</button><button class="btn ghost sm" data-a="clear">${S.confirm==='clear'?'Tap again to clear':'Clear'}</button></div>`:''}
+function vSettings(){autoCfg();const c=S.cfg,n=S.names.length,vil=n-(c.mafia+c.doctor+c.detective+c.jester),err=setupError();
+  return nav('Setup','players')+`<div><h2 class="title">Ready to play?</h2><p class="subtle">${n} players · ${S.names.map(esc).join(', ')}</p></div>
+  <section class="card"><div class="card-h"><h3>Roles</h3><button class="link" data-a="custom">${c.custom?'Done':'Change'}</button></div>
+    <div class="rchips">${rchip('mafia',c.mafia)}${rchip('doctor',c.doctor)}${rchip('detective',c.detective)}${rchip('jester',c.jester)}${rchip('villager',Math.max(vil,0))}</div>
+    ${c.custom?`<div class="custom ${S.fx==='open'?'fx-open':''}">${stepper('mafia','Mafia','🔪',1,mafiaMax(n))}${stepper('doctor','Doctor','🩺',0,1)}${stepper('detective','Detective','🔍',0,1)}${stepper('jester','Jester','🃏',0,1)}
+      ${c.manual?`<button class="link" data-a="auto">Reset to recommended</button>`:'<p class="small muted" style="padding-top:6px">These are recommended for your group size.</p>'}</div>`:''}
   </section>
-  <section class="card"><div class="card-h"><h2>Roles</h2><button class="link" data-a="auto">${c.manual?'Use recommended':'Recommended ✓'}</button></div>
-    ${stepper('mafia','Mafia','🔪',1,mafiaMax(n))}${stepper('doctor','Doctor','🩺',0,1)}${stepper('detective','Detective','🔍',0,1)}${stepper('jester','Jester','🃏',0,1)}
-    <div class="row"><span>🏠 Villagers</span><b class="${vil<0?'bad':''}">${n?Math.max(vil,0):'—'}</b></div>
+  <section class="card"><h3>Who runs the game?</h3>
+    <div class="seg"><button data-a="mode" data-v="phone" class="${c.mode==='phone'?'on':''}"><span class="e">📱</span><b>The phone</b><small>Everyone plays. Pass it around.</small></button><button data-a="mode" data-v="person" class="${c.mode==='person'?'on':''}"><span class="e">🎩</span><b>A person</b><small>One narrator who doesn't play.</small></button></div>
+    ${c.mode==='person'?'<p class="small muted" style="margin-top:10px">Don\'t add the narrator as a player.</p>':''}
   </section>
-  <section class="card"><h2>How you'll play</h2>
-    <div class="seg"><button data-a="mode" data-v="pass" class="${c.mode==='pass'?'on':''}">No narrator<small>Everyone plays. Pass the phone at night.</small></button><button data-a="mode" data-v="narrator" class="${c.mode==='narrator'?'on':''}">Narrator<small>One person holds the phone and runs it.</small></button></div>
-    ${c.mode==='pass'&&canVoice()?`<div class="row"><span>🔊 Voice narrator<small>Reads the night, morning and votes out loud</small></span><button class="tog ${c.voice?'on':''}" data-a="voicecfg" aria-pressed="${c.voice}" aria-label="Voice narrator"></button></div>`:''}
-    <div class="row"><span>Reveal a player's role when they die</span><button class="tog ${c.reveal?'on':''}" data-a="reveal" aria-pressed="${c.reveal}" aria-label="Reveal roles on death"></button></div>
-    <div class="row"><span>Discussion timer</span><div class="step"><button data-a="mins" data-v="-1" ${c.mins<=1?'disabled':''} aria-label="Less time">−</button><b>${c.mins}m</b><button data-a="mins" data-v="1" ${c.mins>=15?'disabled':''} aria-label="More time">+</button></div></div>
+  <section class="card">
+    ${c.mode==='phone'&&canVoice()?`<div class="row"><span>🔊 Voice narrator<small>Reads the night and votes out loud</small></span><button class="tog ${c.voice?'on':''}" data-a="voicecfg" aria-pressed="${c.voice}" aria-label="Voice narrator"></button></div>`:''}
+    <div class="row"><span>⏱ Discussion time</span><div class="step"><button data-a="mins" data-v="-1" ${c.mins<=1?'disabled':''} aria-label="Less time">−</button><b>${c.mins}m</b><button data-a="mins" data-v="1" ${c.mins>=15?'disabled':''} aria-label="More time">+</button></div></div>
+    <div class="row"><span>👁 Show roles when people die</span><button class="tog ${c.reveal?'on':''}" data-a="reveal" aria-pressed="${c.reveal}" aria-label="Show roles when people die"></button></div>
   </section>
-  ${err&&n?`<p class="err">${err}</p>`:''}
-  <button class="btn big" data-a="start" ${err?'disabled':''}>${n<4?'Add players to start':'Deal the roles'}</button>
-  <details class="card how"><summary>How to play</summary>
-    <p>Mafia is a game of hidden roles. The <b>Mafia</b> know each other and want to outnumber everyone else. The <b>town</b> wants to find and vote out every Mafia member.</p>
-    <ul><li><b>Night:</b> In no‑narrator mode, pass the phone around the circle — each person taps their own name. Everyone taps a name on their turn, even Villagers, so nobody can tell roles by timing. Mafia pick a victim, the Doctor protects someone, the Detective investigates.</li>
-    <li><b>Morning:</b> The app announces who was killed (or saved).</li>
-    <li><b>Day:</b> Argue, accuse, bluff. When the timer ends, vote out loud and tap who the town eliminated.</li>
-    <li><b>Winning:</b> Town wins when all Mafia are gone. Mafia wins when they equal or outnumber everyone else. The Jester wins by getting voted out.</li></ul>
-  </details>
-  ${standalone?'':`<button class="install" data-a="install"><img src="icon-192.png" alt=""><span><b>Add Mafia to your Home Screen</b><small>Opens full-screen like an app · ${INST[DETECTED].short}</small></span></button>`}`}
+  ${err?`<p class="err">${err}</p>`:''}
+  <div class="dock"><button class="btn big" data-a="start" ${err?'disabled':''}>Deal roles</button></div>`}
 
-function roleCard(i,extra){const p=P(i),r=ROLES[p.role];
+function roleFace(i){const p=P(i),R=ROLES[p.role];
   const mates=p.role==='mafia'?S.players.filter((q,j)=>q.role==='mafia'&&j!==i).map(q=>esc(q.name)+(q.alive?'':' †')):[];
-  return`<div class="rolecard t-${r.team}"><div class="ricon">${r.icon}</div><div class="kicker">${esc(p.name)}, you are</div><div class="rname">${r.name}</div><p>${r.desc}</p>${p.role==='mafia'?`<div class="mates">${mates.length?'Your crew: <b>'+mates.join(', ')+'</b>':'You work alone.'}</div>`:''}${extra||''}</div>`}
-
-function topbar(label){const v=S.cfg.mode==='pass'&&canVoice();
-  return`<div class="top"><span>${label}</span><span class="tb">${v?`<button class="iconbtn" data-a="voice" aria-label="${S.cfg.voice?'Mute narrator':'Turn on narrator'}">${S.cfg.voice?'🔊':'🔇'}</button>`:''}<button class="link" data-a="menu">Menu</button></span></div>`}
-function targets(list){return`<div class="targets">${list.map(j=>`<button class="tgt ${S.pick===j?'on':''}" data-a="pick" data-i="${j}">${esc(P(j).name)}</button>`).join('')}</div>`}
-function selfGrid(list,done,label,sub){
-  return`<div class="c" style="padding-top:6px"><div class="kicker">${label}</div><h2 style="font-size:32px;margin-top:4px">Tap your name</h2><p class="muted small" style="margin:6px auto 0;max-width:32ch">${sub}</p></div>
-  <div class="targets">${list.map(j=>{const d=done.includes(j);return`<button class="tgt self ${d?'done':''}" data-a="self" data-i="${j}" ${d?'disabled':''}>${d?'✓ ':''}${esc(P(j).name)}</button>`}).join('')}</div>
-  <p class="hint" style="margin-top:2px">${done.length} of ${list.length} done</p>`}
-
+  return`<div class="ricon">${R.icon}</div><div class="kicker">You are</div><div class="rname">${R.name}</div><p>${R.desc}</p>${p.role==='mafia'?`<div class="crew">${mates.length?'Your crew: <b>'+mates.join(', ')+'</b>':'You work alone.'}</div>`:''}`}
 function vReveal(){
-  if(!S.shown)return topbar('Dealing roles')+selfGrid(S.players.map((p,i)=>i),S.revealed,'Secret roles','Pass the phone around the circle. On your turn, tap your own name to see your role.');
-  return topbar('Dealing roles')+roleCard(S.ri)+`<button class="btn big" data-a="hide">Got it — hide &amp; pass on</button>`}
+  if(S.ri==null)return gameTop()+nameGrid(S.players.map((p,i)=>i),S.revealed,'Pass the phone','Tap your own name to see your secret role.');
+  return gameTop()+flipCard(S.ri,roleFace(S.ri),`<button class="btn big" data-a="hide">Got it — pass the phone</button>`)}
 
-function vNarrReady(){return topbar('Ready')+`<div class="pass"><div class="glyph">🎩</div><h2>All roles dealt</h2><p class="lead">Hand the phone to the narrator. Narrator: you'll read each line aloud and tap what the players point to.</p><button class="btn big" data-a="night">Begin Night 1</button><button class="link" data-a="roster">See all roles</button></div>`}
+function vNarrReady(){return gameTop()+`<div class="stage"><div class="glyph">🎩</div><h2 class="title">Everyone has a role</h2><p class="lead">Give the phone to the narrator. Narrator: read each line out loud and tap what the players point to.</p></div>
+  <div class="dock"><button class="btn big" data-a="night">Start Night 1</button><button class="link" data-a="roster">See everyone's role</button></div>`}
 
-function vNightPass(){const N=S.night;
-  if(N.done.length>=N.order.length)return topbar('Night '+S.round)+`<div class="pass"><div class="glyph">☾</div><h2>The night is over</h2><p class="lead">Put the phone in the middle. Everyone, open your eyes.</p><button class="btn big" data-a="dawn">Reveal what happened</button></div>`;
-  if(N.stage==='grid')return topbar('Night '+S.round)+selfGrid(N.order,N.done,'Night '+S.round,'Eyes closed unless you have the phone. Tap your name, take your turn, pass it on.');
+function vNightPhone(){const N=S.night;
+  if(N.done.length>=N.order.length)return gameTop()+`<div class="stage"><div class="moon"></div><h2 class="title">The night is over</h2><p class="lead">Put the phone in the middle and wake everyone up.</p></div><div class="dock"><button class="btn big" data-a="dawn">See what happened</button></div>`;
+  if(N.cur==null)return gameTop()+nameGrid(N.order,N.done,'Night '+S.round,'Eyes closed until you have the phone. Tap your name, take your turn, pass it on.');
   const i=N.cur;
   if(N.stage==='result'){const t=P(N.invest),bad=t.role==='mafia';
-    return topbar('Night '+S.round)+`<div class="rolecard t-town"><div class="ricon">🔍</div><div class="kicker">Investigation result</div><div class="rname ${bad?'red':'green'}">${esc(t.name)}</div><p style="font-size:20px;font-weight:700">${bad?'is MAFIA':'is not Mafia'}</p><p class="small" style="margin-top:10px">Keep a straight face.</p></div><button class="btn big" data-a="next">Hide &amp; pass on</button>`}
-  const r=P(i).role,alive=aliveIdx();let prompt,list,extra='';
-  if(r==='mafia'){prompt='Who do you want to eliminate?';list=alive.filter(j=>P(j).role!=='mafia');
-    if(N.votes.length)extra=`<div class="mates">Crew picks so far: <b>${N.votes.map(v=>esc(P(v.by).name)+' → '+esc(P(v.t).name)).join(', ')}</b></div>`;}
-  else if(r==='doctor'){prompt='Who do you want to protect?';list=alive}
-  else if(r==='detective'){prompt='Who do you want to investigate?';list=alive.filter(j=>j!==i)}
+    return gameTop()+`<div class="stage"><div class="glyph">🔍</div><div class="kicker">Your investigation</div><div class="bigname blur ${bad?'red':'green'}">${esc(t.name)}</div><p class="lead late" style="font-size:22px;font-weight:700">${bad?'is in the Mafia!':'is not Mafia.'}</p><p class="muted small late">Keep a straight face.</p></div><div class="dock"><button class="btn big" data-a="next">Done — pass the phone</button></div>`}
+  const r=P(i).role,R=ROLES[r],alive=aliveIdx();let prompt,list,extra='';
+  if(r==='mafia'){prompt='Who should the Mafia eliminate?';list=alive.filter(j=>P(j).role!=='mafia');
+    const mates=S.players.filter((q,j)=>q.role==='mafia'&&q.alive&&j!==i).map(q=>esc(q.name));
+    extra=`<div class="mates">${mates.length?'Your crew: <b>'+mates.join(', ')+'</b>':'You work alone.'}${N.votes.length?'<br>Picks so far: <b>'+N.votes.map(v=>esc(P(v.by).name)+' → '+esc(P(v.t).name)).join(', ')+'</b>':''}</div>`}
+  else if(r==='doctor'){prompt='Who will you protect?';list=alive}
+  else if(r==='detective'){prompt='Who will you check?';list=alive.filter(j=>j!==i)}
   else{prompt='Tap anyone you suspect';list=alive.filter(j=>j!==i)}
-  const hint=r==='mafia'?'If the crew disagrees, the most-picked name is the target (ties go to the last pick).':(r==='villager'||r==='jester')?'This does nothing — it just keeps your turn the same length as everyone else\'s.':'';
-  return topbar('Night '+S.round)+roleCard(i,extra)+`<h3 class="prompt">${prompt}</h3>${hint?`<p class="hint">${hint}</p>`:''}${targets(list)}<button class="btn big" data-a="lock" ${S.pick==null?'disabled':''}>${r==='mafia'||r==='doctor'||r==='detective'?'Lock it in':'Done'}</button>`}
+  const hint=r==='mafia'?'If your crew disagrees, the most-picked name wins.':(r==='villager'||r==='jester')?'This does nothing — it just keeps your turn as long as everyone else\'s.':'';
+  const face=`<div class="ricon">${R.icon}</div><div class="kicker">You are</div><div class="rname">${R.name}</div><p>${R.short}</p>`;
+  return gameTop()+flipCard(i,face,`${extra}<h3 class="prompt">${prompt}</h3>${hint?`<p class="hint">${hint}</p>`:''}${targets(list)}<button class="btn big" data-a="lock" ${S.pick==null?'disabled':''}>${S.pick==null?'Pick a name':(r==='mafia'||r==='doctor'||r==='detective')?'Confirm '+esc(P(S.pick).name):'Done'}</button>`,true)}
 
-function vNightNarr(){const N=S.night,alive=aliveIdx();
-  if(N.idx>=N.steps.length)return topbar('Night '+S.round)+`<div class="script"><small>Read aloud</small>Everyone, open your eyes.</div><div class="pass" style="min-height:40vh"><div class="glyph">☀</div><button class="btn big" data-a="dawn">Reveal the morning</button></div>`;
-  const st=N.steps[N.idx];const opener=N.idx===0?`<div class="script"><small>Read aloud</small>Night ${S.round}. Everyone, close your eyes.</div>`:'';
+function vNightPerson(){const N=S.night,alive=aliveIdx();
+  if(N.idx>=N.steps.length)return gameTop()+`<div class="script"><small>Read out loud</small>Everyone, open your eyes.</div><div class="stage"><div class="sun"></div></div><div class="dock"><button class="btn big" data-a="dawn">Reveal the morning</button></div>`;
+  const st=N.steps[N.idx],opener=N.idx===0?`<div class="script"><small>Read out loud</small>Night ${S.round}. Everyone, close your eyes.</div>`:'';
   const holders=role=>S.players.filter(p=>p.alive&&p.role===role).map(p=>esc(p.name)).join(', ');
   if(st==='detective'&&N.stage==='result'){const t=P(N.invest),bad=t.role==='mafia';
-    return topbar('Night '+S.round)+`<div class="rolecard t-town"><div class="kicker">Show the Detective</div><div class="rname ${bad?'red':'green'}">${esc(t.name)}</div><p style="font-size:20px;font-weight:700">${bad?'👍 is MAFIA':'👎 is not Mafia'}</p></div><div class="script"><small>Read aloud</small>Detective, close your eyes.</div><button class="btn big" data-a="next">Next</button>`}
+    return gameTop()+`<div class="stage"><div class="kicker">Show the Detective</div><div class="bigname blur ${bad?'red':'green'}">${esc(t.name)}</div><p class="lead late" style="font-size:24px;font-weight:700">${bad?'👍 Mafia':'👎 Not Mafia'}</p></div><div class="script"><small>Then read</small>Detective, close your eyes.</div><div class="dock"><button class="btn big" data-a="next">Next</button></div>`}
   let line,list,who;
   if(st==='mafia'){line='Mafia, open your eyes and silently agree on who to eliminate.';list=alive.filter(j=>P(j).role!=='mafia');who=`Mafia: <b>${holders('mafia')}</b>`}
-  else if(st==='doctor'){line='Doctor, open your eyes. Who do you want to save tonight?';list=alive;who=`Doctor: <b>${holders('doctor')}</b>`}
-  else{line='Detective, open your eyes. Who do you want to investigate?';list=alive.filter(j=>P(j).role!=='detective');who=`Detective: <b>${holders('detective')}</b>`}
-  const closer=st==='detective'?'':`<div class="script"><small>Then</small>${st==='mafia'?'Mafia':'Doctor'}, close your eyes.</div>`;
-  return topbar('Night '+S.round)+opener+`<div class="script"><small>Read aloud</small>${line}</div><p class="who">${who}</p>${targets(list)}<button class="btn big" data-a="lock" ${S.pick==null?'disabled':''}>Confirm</button>${closer}`}
+  else if(st==='doctor'){line='Doctor, open your eyes. Who do you want to save?';list=alive;who=`Doctor: <b>${holders('doctor')}</b>`}
+  else{line='Detective, open your eyes. Who do you want to check?';list=alive.filter(j=>P(j).role!=='detective');who=`Detective: <b>${holders('detective')}</b>`}
+  const closer=st==='detective'?'':`<div class="script"><small>Then read</small>${st==='mafia'?'Mafia':'Doctor'}, close your eyes.</div>`;
+  return gameTop()+opener+`<div class="script"><small>Read out loud</small>${line}</div><p class="who">${who}</p>${targets(list)}<button class="btn big" data-a="lock" ${S.pick==null?'disabled':''}>${S.pick==null?'Tap who they point to':'Confirm '+esc(P(S.pick).name)}</button>${closer}`}
 
 function vMorning(){const M=S.morning,k=M.killed!=null?P(M.killed):null;
-  return topbar('Day '+S.round)+`<div class="pass"><div class="glyph">☀</div><div class="kicker">Morning · Day ${S.round}</div>
-  ${k?`<div class="bigname red">${esc(k.name)}</div><p class="lead">was found dead this morning.${S.cfg.reveal?`<br>They were ${tag(k.role)}`:''}</p>`
-     :`<h2 style="font-size:34px">Everyone survived</h2><p class="lead">${M.saved?'The Mafia struck — but the Doctor got there first.':'A quiet night. Too quiet.'}</p>`}
-  ${S.winner?`<button class="btn big" data-a="over">See who won</button>`:`<button class="btn big" data-a="day">Start the discussion</button>`}</div>`}
+  return gameTop()+`<div class="stage"><div class="sun"></div><div class="kicker">Good morning · Day ${S.round}</div>
+  ${k?`<p class="lead">Last night, the Mafia killed</p><div class="bigname blur red">${esc(k.name)}</div>${S.cfg.reveal?`<p class="lead late">They were ${tag(k.role)}</p>`:''}`
+     :`<div class="bigname blur" style="font-size:44px">Everyone survived!</div><p class="lead late">${M.saved?'The Mafia struck — but the Doctor saved them.':'A quiet night. Too quiet.'}</p>`}</div>
+  <div class="dock">${S.winner?`<button class="btn big" data-a="over">See who won</button>`:`<button class="btn big" data-a="day">Start discussion</button>`}</div>`}
 
+const R0=88,CIRC=2*Math.PI*R0;
 const tLeft=()=>{const T=S.timer;return T.running?Math.max(0,Math.ceil((T.endsAt-Date.now())/1000)):T.left};
 const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-function vDay(){const l=tLeft(),alive=aliveIdx(),dead=S.players.filter(p=>!p.alive);
-  return topbar('Day '+S.round)+`<div class="kicker c">Discussion</div><div id="clock" class="clock ${l<=10?'warn':''}">${fmt(l)}</div>
-  <div class="trio"><button class="btn ghost" data-a="tadd" data-v="-30">−30s</button><button class="btn" data-a="tgo">${S.timer.running?'Pause':l===0?'Restart':'Start'}</button><button class="btn ghost" data-a="tadd" data-v="30">+30s</button></div>
-  <section class="card"><div class="card-h"><h2>Still alive</h2><span class="pill">${alive.length}</span></div><div class="chips">${alive.map(j=>`<span class="chip plain">${esc(P(j).name)}</span>`).join('')}</div>
-  ${dead.length?`<div class="chips">${dead.map(p=>`<span class="chip plain dead">${esc(p.name)}</span>`).join('')}</div>`:''}</section>
-  <button class="btn big" data-a="vote">Go to the vote</button>`}
+function vDay(){const T=S.timer,l=tLeft(),alive=aliveIdx(),dead=S.players.filter(p=>!p.alive);
+  return gameTop()+`<div id="timer" class="timer ${l===0?'up':l<=10?'warn':''}"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="${R0}"/><circle id="ring" class="prog" cx="100" cy="100" r="${R0}" stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${(CIRC*(1-l/T.total)).toFixed(1)}"/></svg>
+    <div class="tcenter"><div class="tnum" id="clock">${l===0?"Time's up":fmt(l)}</div><div class="tsub">${T.running?'Discuss!':l===0?'Time to vote':'Paused'}</div></div></div>
+  <div class="trio"><button class="btn ghost" data-a="tadd" data-v="-30">−30s</button><button class="btn ghost" data-a="tgo">${T.running?'Pause':l===0?'+1 minute':'Resume'}</button><button class="btn ghost" data-a="tadd" data-v="30">+30s</button></div>
+  <div class="chips">${alive.map(j=>`<span class="chip">${esc(P(j).name)}</span>`).join('')}${dead.map(p=>`<span class="chip dead">${esc(p.name)}</span>`).join('')}</div>
+  <div class="dock"><button class="btn big ${l===0?'pulse':''}" data-a="vote">Vote now</button></div>`}
 
 function vVote(){const alive=aliveIdx();
-  return topbar('Day '+S.round)+`<div class="c" style="padding-top:8px"><div class="kicker">The vote</div><h2 style="font-size:30px;margin-top:4px">Who is the town eliminating?</h2><p class="muted small" style="margin-top:6px">Vote out loud — point on three. Then tap the player with the most votes.</p></div>
-  ${targets(alive)}<button class="btn big" data-a="elim" ${S.pick==null?'disabled':''}>${S.pick==null?'Pick a player':'Eliminate '+esc(P(S.pick).name)}</button><button class="btn ghost" data-a="noelim">Nobody — tie or skip</button>`}
+  return gameTop()+`<div class="head c"><h2 class="title">Who's out?</h2><p class="subtle">Everyone point on three. Tap the person with the most votes.</p></div>
+  ${targets(alive)}
+  <div class="dock"><button class="btn big" data-a="elim" ${S.pick==null?'disabled':''}>${S.pick==null?'Pick a player':'Vote out '+esc(P(S.pick).name)}</button><button class="btn ghost" data-a="noelim">It's a tie — skip</button></div>`}
 
 function vVerdict(){const v=S.verdict,p=v.who!=null?P(v.who):null,show=p&&(S.cfg.reveal||p.role==='jester');
-  return topbar('Day '+S.round)+`<div class="pass"><div class="glyph">⚖</div>${p?`<div class="bigname">${esc(p.name)}</div><p class="lead">has been voted out.${show?`<br>They were ${tag(p.role)}`:''}</p>`:`<h2 style="font-size:34px">No one was eliminated</h2><p class="lead">The town couldn't agree. Night falls anyway.</p>`}
-  ${S.winner?`<button class="btn big" data-a="over">See who won</button>`:`<button class="btn big" data-a="night">Begin Night ${S.round+1}</button>`}</div>`}
+  return gameTop()+`<div class="stage"><div class="glyph">⚖️</div>${p?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(p.name)}</div>${show?`<p class="lead late">They were ${tag(p.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">The town couldn't agree.</p>`}</div>
+  <div class="dock">${S.winner?`<button class="btn big" data-a="over">See who won</button>`:`<button class="btn big" data-a="night">Start Night ${S.round+1}</button>`}</div>`}
 
 function rosterHTML(){return`<div class="roster">${S.players.map(p=>`<div class="row ${p.alive?'':'dead'}"><span>${esc(p.name)}</span>${tag(p.role)}</div>`).join('')}</div>`}
-function vOver(){const W={town:['Town wins','Every member of the Mafia has been caught.','🏛'],mafia:['Mafia wins','The Mafia now runs this town.','🔪'],jester:['Jester wins',S.jester!=null?esc(P(S.jester).name)+' fooled everyone into voting them out.':'','🃏']}[S.winner];
-  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">Game over · ${S.round} day${S.round>1?'s':''}</div><div class="bigname ${S.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead" style="margin:8px auto 0">${W[1]}</p></div>
-  <section class="card"><div class="card-h"><h2>Everyone's role</h2></div>${rosterHTML()}</section>
+function vOver(){const W={town:['Town wins!','Every member of the Mafia was caught.','🏛️'],mafia:['Mafia wins!','The Mafia took over the town.','🔪'],jester:['Jester wins!',S.jester!=null?esc(P(S.jester).name)+' tricked everyone into voting them out.':'','🃏']}[S.winner]||['Game over','',''];
+  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">Game over · ${S.round} day${S.round>1?'s':''}</div><div class="bigname blur ${S.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p></div>
+  <section class="card"><div class="card-h"><h3>Everyone's role</h3></div>${rosterHTML()}</section>
   <details class="card"><summary>What happened</summary><div class="log">${S.log.map(l=>`<div>${l}</div>`).join('')}</div></details>
-  <button class="btn big" data-a="again">Play again — same players</button><button class="btn ghost" data-a="setup">Change players or roles</button>`}
+  <div class="dock"><button class="btn big" data-a="again">Play again</button><button class="btn ghost" data-a="home">Home</button></div>`}
 
-function sheet(inner){return`<div class="veil" data-a="close"><div class="sheet" data-stop>${inner}</div></div>`}
+/* ---------- sheets ---------- */
+function sheet(inner){return`<div class="veil" data-a="close"><div class="sheet" data-stop role="dialog"><div class="grab"></div>${inner}</div></div>`}
 function vSheet(){const c=S.confirm;
-  if(S.menu==='roster')return sheet(`<h3>All roles</h3><div class="warnbox">Narrator only. If you're playing, close this now.</div>${rosterHTML()}<button class="btn ghost" data-a="close">Close</button>`);
-  if(S.menu==='gsave'){const active=G.find(g=>g.id===S.group);
-    return sheet(`<h3>Save this group</h3><p class="muted small">${S.names.length} players: ${S.names.map(esc).join(', ')}</p>
-    <label class="lbl" for="gname">Group name</label><input id="gname" maxlength="30" placeholder="e.g. Lunch table, Robotics team" value="${active?esc(active.name):''}" autocomplete="off">
-    <p class="muted small">Using the name of an existing group updates it.</p>
-    <button class="btn" data-a="gsaveok">Save group</button><button class="btn ghost" data-a="close">Cancel</button>`)}
+  if(S.menu&&S.menu[0]==='o'&&window.MafiaOnline)return window.MafiaOnline.sheet(sheet);
+  if(S.menu==='roster')return sheet(`<h3>Everyone's role</h3><div class="warnbox">Narrator only — if you're playing, close this.</div>${rosterHTML()}<button class="btn ghost" data-a="close">Close</button>`);
+  if(S.menu==='how')return sheet(`<h3>How to play</h3><div class="howlist">
+    <div><span class="e">🎭</span><p><b>Everyone gets a secret role.</b> The Mafia know who each other are. Everyone else doesn't.</p></div>
+    <div><span class="e">🌙</span><p><b>At night, pass the phone.</b> Tap your name and take your turn. Everyone taps something, so no one can tell who's who.</p></div>
+    <div><span class="e">☀️</span><p><b>In the morning,</b> find out who was killed. Then argue, accuse, and vote someone out.</p></div>
+    <div><span class="e">🏆</span><p><b>Town wins</b> by voting out all the Mafia. <b>Mafia wins</b> when they equal the rest. The <b>Jester</b> wins by getting voted out.</p></div></div>
+    <div class="lbl">Roles</div><div class="rolelist">${Object.keys(ROLES).map(k=>`<div><span>${ROLES[k].icon}</span><span><b>${ROLES[k].name}</b> — ${ROLES[k].desc}</span></div>`).join('')}</div>
+    <button class="btn" data-a="close">Got it</button>`);
+  if(S.menu==='gsave')return sheet(`<h3>Save this group</h3><p class="muted small">${S.names.length} players: ${S.names.map(esc).join(', ')}</p>
+    <form id="gsavef"><label class="lbl" for="gname">Group name</label><input id="gname" maxlength="30" placeholder="e.g. Lunch table" autocomplete="off" autocapitalize="words" enterkeyhint="done"></form>
+    <button class="btn" data-a="gsaveok">Save group</button><button class="btn ghost" data-a="close">Cancel</button>`);
   if(S.menu==='gedit'&&S.edit){const E=S.edit;
     return sheet(`<h3>Edit group</h3><label class="lbl" for="gename">Group name</label><input id="gename" maxlength="30" value="${esc(E.name)}" autocomplete="off">
     <label class="lbl">Players · ${E.names.length}</label>
-    <div class="chips" style="margin-top:0">${E.names.length?E.names.map((x,i)=>`<span class="chip">${esc(x)}<button data-a="germ" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></span>`).join(''):'<p class="muted small">No players yet.</p>'}</div>
-    <form id="gaddf" class="addrow"><input id="gnm" maxlength="18" placeholder="Add a name" autocomplete="off" enterkeyhint="done" aria-label="Add a name to this group"><button class="btn" type="submit">Add</button></form>
-    <button class="btn" data-a="geuse">Save &amp; play with this group</button>
-    <button class="btn ghost" data-a="geok">Save changes</button>
-    <button class="btn ghost danger" data-a="gedel">${c==='gedel'?'Tap again to delete for good':'Delete group'}</button>
-    <button class="link" data-a="close" style="padding:6px">Cancel</button>`)}
-  if(S.menu==='install'){const k=S.instKey||DETECTED,I=INST[k];
-    return sheet(`<div class="appid"><img src="icon-192.png" alt=""><div><b>Mafia</b><small>Party game · works offline once added</small></div></div>
-    <h3 style="margin-top:6px">Add to your Home Screen</h3>
-    <p class="muted small">${k===DETECTED?'Looks like you\'re on':'Showing steps for'} <b style="color:var(--text)">${I.label}</b></p>
+    <div class="pchips">${E.names.length?E.names.map((x,i)=>`<span class="pchip">${esc(x)}<button data-a="germ" data-i="${i}" aria-label="Remove ${esc(x)}">×</button></span>`).join(''):'<p class="muted small">No players yet.</p>'}</div>
+    <form id="gaddf" class="addrow" style="flex-direction:row"><input id="gnm" maxlength="18" placeholder="Add a name" autocomplete="off" autocapitalize="words" enterkeyhint="done" aria-label="Add a name to this group"><button class="btn" type="submit">Add</button></form>
+    <button class="btn" data-a="geuse">Save &amp; play</button>
+    <button class="btn ghost" data-a="geok">Save</button>
+    <button class="btn ghost danger" data-a="gedel">${c==='gedel'?'Tap again to delete':'Delete group'}</button>`)}
+  if(S.menu==='install'){const I=INST[DETECTED];
+    return sheet(`<div class="appid"><img src="icon-192.png" alt=""><div><b>Add to Home Screen</b><small>Opens full screen, like an app</small></div></div>
     ${I.note?`<div class="infobox">${I.note}</div>`:''}
-    <ol class="steps">${I.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
-    <label class="lbl" style="margin-top:6px">Not your browser? Pick one</label>
-    <div class="chips" style="margin-top:0">${Object.keys(INST).map(key=>`<button class="mini ${key===k?'on':''}" data-a="inst" data-v="${key}">${INST[key].short}</button>`).join('')}</div>
-    <button class="btn" data-a="close" style="margin-top:6px">Done</button>`)}
+    <ol class="isteps">${I.steps.map((x,i)=>`<li><span class="n">${i+1}</span><span>${x}</span></li>`).join('')}</ol>
+    ${I.copy?`<button class="btn" data-a="copylink">Copy link</button><button class="btn ghost" data-a="close">Close</button>`:`<button class="btn" data-a="close">Got it</button>`}`)}
   return sheet(`<h3>Menu</h3>
-  ${S.cfg.mode==='pass'&&canVoice()&&lastSaid?`<button class="btn ghost" data-a="repeat">🔁 Repeat the narrator</button>`:''}
-  <button class="btn ghost" data-a="roster">See all roles (narrator)</button>
-  <button class="btn ghost" data-a="again">${c==='again'?'Tap again to redeal':'Restart with same players'}</button>
-  <button class="btn ghost" data-a="setup">${c==='setup'?'Tap again to quit':'Quit to setup'}</button>
+  ${S.cfg.mode==='phone'&&canVoice()&&lastSaid?`<button class="btn ghost" data-a="repeat">🔁 Repeat narrator</button>`:''}
+  <button class="btn ghost" data-a="how">How to play</button>
+  <button class="btn ghost" data-a="roster">See everyone's role (narrator only)</button>
+  <button class="btn ghost" data-a="again">${c==='again'?'Tap again to restart':'Restart game'}</button>
+  <button class="btn ghost danger" data-a="home">${c==='home'?'Tap again to quit':'Quit to home'}</button>
   <button class="btn" data-a="close">Back to game</button>`)}
 
 /* ---------- render ---------- */
+const V={home:vHome,players:vPlayers,settings:vSettings,reveal:vReveal,narrready:vNarrReady,night:()=>S.cfg.mode==='person'?vNightPerson():vNightPhone(),morning:vMorning,day:vDay,vote:vVote,verdict:vVerdict,over:vOver};
 let lastKey='';
 function render(){
-  const v={setup:vSetup,reveal:vReveal,narrready:vNarrReady,night:()=>S.cfg.mode==='narrator'?vNightNarr():vNightPass(),morning:vMorning,day:vDay,vote:vVote,verdict:vVerdict,over:vOver}[S.screen]||vSetup;
-  app.innerHTML=v()+(S.menu?vSheet():'');
+  const v=V[S.screen]||vHome;
   const N=S.night;
-  const key=[S.screen,S.ri,S.shown,N&&N.idx,N&&N.stage,N&&N.cur,S.revealed&&S.revealed.length,S.round].join('|');
-  if(key!==lastKey){window.scrollTo(0,0);lastKey=key}
-  save();
+  const key=S.screen==='online'&&window.MafiaOnline?'online|'+window.MafiaOnline.key():[S.screen,S.ri,N&&N.idx,N&&N.stage,N&&N.cur,S.round].join('|');
+  const entering=key!==lastKey;
+  app.className=entering?'enter':'';
+  app.innerHTML=v();
+  let sh=document.getElementById('sheet');
+  const sheetHTML=S.menu?vSheet():'';
+  if(sheetHTML){if(!sh){sh=document.createElement('div');sh.id='sheet';document.body.appendChild(sh);sh.innerHTML=sheetHTML}
+    else{sh.innerHTML=sheetHTML;const s=sh.querySelector('.sheet'),vl=sh.querySelector('.veil');if(s)s.style.animation='none';if(vl)vl.style.animation='none'}}
+  else if(sh)sh.remove();
+  document.body.dataset.phase=phaseOf();
+  if(entering){window.scrollTo(0,0);lastKey=key}
+  if(entering&&S.screen==='over'&&!S.confettiDone&&S.winner){S.confettiDone=true;setTimeout(confetti,350)}
+  S.fx=null;save();
+  if(window.MafiaOnline&&window.MafiaOnline.after)window.MafiaOnline.after();
 }
+function confetti(){try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return}catch(e){}
+  const c=document.createElement('canvas');c.className='confetti';document.body.appendChild(c);const ctx=c.getContext('2d');if(!ctx){c.remove();return}
+  const dpr=Math.min(2,window.devicePixelRatio||1),W=c.width=innerWidth*dpr,H=c.height=innerHeight*dpr;
+  const cols=S.winner==='mafia'?['#c8283a','#ff5466','#7a1626','#f3ede7']:['#d9b26f','#f3d49b','#f3ede7','#c8283a'];
+  const ps=Array.from({length:150},()=>({x:W/2+(Math.random()-.5)*W*.4,y:H*.32,vx:(Math.random()-.5)*15*dpr,vy:(-Math.random()*17-5)*dpr,r:(4+Math.random()*5)*dpr,c:cols[Math.random()*cols.length|0],a:Math.random()*6,va:(Math.random()-.5)*.35}));
+  let t=0;(function f(){t++;ctx.clearRect(0,0,W,H);ctx.globalAlpha=Math.max(0,1-Math.max(0,t-140)/80);
+    ps.forEach(p=>{p.vy+=.42*dpr;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);ctx.restore()});
+    if(t<220)requestAnimationFrame(f);else c.remove()})()}
 
-/* ---------- game actions ---------- */
+/* ---------- game logic ---------- */
 function startGame(){autoCfg();const c=S.cfg,n=S.names.length;
   const roles=[];for(let k=0;k<c.mafia;k++)roles.push('mafia');
   if(c.doctor)roles.push('doctor');if(c.detective)roles.push('detective');if(c.jester)roles.push('jester');
   while(roles.length<n)roles.push('villager');shuffle(roles);
   S.players=S.names.map((name,i)=>({name,role:roles[i],alive:true}));
-  Object.assign(S,{screen:'reveal',ri:0,shown:false,revealed:[],round:1,log:[],winner:null,jester:null,pick:null,menu:null,confirm:null,night:null});
-  toSay=dealSay;
-}
-function beginNight(){S.pick=null;
-  S.night={votes:[],save:null,invest:null,idx:0,stage:'grid',done:[],cur:null};
-  if(S.cfg.mode==='narrator'){const has=r=>S.players.some(p=>p.alive&&p.role===r);
-    S.night.steps=['mafia','doctor','detective'].filter(has);S.night.stage=null;}
+  Object.assign(S,{screen:'reveal',ri:null,flipped:false,revealed:[],round:1,log:[],winner:null,jester:null,pick:null,menu:null,confirm:null,night:null,confettiDone:false,morning:null,verdict:null,timer:null});
+  toSay=dealSay;}
+function beginNight(){S.pick=null;S.flipped=false;
+  S.night={votes:[],save:null,invest:null,idx:0,stage:null,done:[],cur:null};
+  if(S.cfg.mode==='person'){const has=r=>S.players.some(p=>p.alive&&p.role===r);S.night.steps=['mafia','doctor','detective'].filter(has)}
   else S.night.order=aliveIdx();
   S.screen='night';toSay=nightSay();}
-function nightTurnDone(i){const N=S.night;N.done.push(i);N.stage='grid';S.pick=null;
+function turnDone(i){const N=S.night;if(!N.done.includes(i))N.done.push(i);N.cur=null;N.stage=null;S.flipped=false;S.pick=null;
   if(N.done.length>=N.order.length)toSay='That is everyone. Put the phone in the middle. Everyone, open your eyes.';}
 function resolveNight(){const N=S.night;let t=null;
   if(N.votes.length){const cnt={};N.votes.forEach(v=>cnt[v.t]=(cnt[v.t]||0)+1);const mx=Math.max(...Object.values(cnt));N.votes.forEach(v=>{if(cnt[v.t]===mx)t=v.t})}
@@ -412,100 +631,127 @@ function resolveNight(){const N=S.night;let t=null;
   if(t!=null){if(N.save===t)saved=true;else{killed=t;P(t).alive=false}}
   S.morning={killed,saved};
   S.log.push(`<b>Night ${S.round}:</b> `+(t==null?'The Mafia did nothing.':`Mafia targeted ${esc(P(t).name)} — ${saved?'saved by the Doctor.':'killed.'}`)+(N.invest!=null?` Detective checked ${esc(P(N.invest).name)}.`:''));
-  S.winner=checkWin();S.screen='morning';S.pick=null;
+  S.winner=checkWin();S.screen='morning';S.pick=null;haptic(30);
   let line='Good morning, everyone. ';
-  if(killed!=null)line+=`Last night, ${P(killed).name} was killed.`+(S.cfg.reveal?` They were ${roleSay(P(killed).role)}.`:'');
+  if(killed!=null)line+=`Last night, the Mafia killed ${P(killed).name}.`+(S.cfg.reveal?` They were ${roleSay(P(killed).role)}.`:'');
   else line+=saved?'The Mafia struck last night, but the doctor saved their target. Everyone survived.':'It was a quiet night. Everyone survived.';
   if(S.winner)line+=' '+winSay[S.winner];
   toSay=line;}
-function lock(){const N=S.night,pk=S.pick;if(pk==null)return;
-  if(S.cfg.mode==='narrator'){const st=N.steps[N.idx];
+function lock(){const N=S.night,pk=S.pick;if(pk==null)return;haptic(15);
+  if(S.cfg.mode==='person'){const st=N.steps[N.idx];
     if(st==='mafia')N.votes=[{by:-1,t:pk}];else if(st==='doctor')N.save=pk;else{N.invest=pk;N.stage='result';S.pick=null;return}
     N.idx++;S.pick=null;return}
   const i=N.cur,r=P(i).role;
   if(r==='mafia')N.votes.push({by:i,t:pk});else if(r==='doctor')N.save=pk;
   else if(r==='detective'){N.invest=pk;N.stage='result';S.pick=null;return}
-  nightTurnDone(i);}
+  turnDone(i);}
 function readInput(id){const el=document.getElementById(id);return el?el.value:''}
+function loadGroup(g){S.names=g.names.slice();S.group=g.id;S.cfg.manual=false;S.cfg.custom=false;autoCfg()}
+function quitHome(){hush();S.screen='home';S.menu=null;S.players=[];S.night=null}
 
 const A={
-  rm:d=>{S.names.splice(+d.i,1);autoCfg();const c=S.cfg;c.mafia=Math.min(c.mafia,mafiaMax(S.names.length))},
+  go:d=>{S.screen=d.v},
+  newgame:()=>{S.screen='players'},
+  online:()=>{S.screen='online';if(window.MafiaOnline)window.MafiaOnline.open()},
+  lastplay:()=>{haptic();if(S.names.length>=4){autoCfg();S.screen='settings'}else S.screen='players'},
+  lastclear:(d,prev)=>{if(prev!=='lastclear'){S.confirm='lastclear';return}S.names=[];S.group=null;autoCfg();toast('Cleared')},
+  tosettings:()=>{if(S.names.length>=4){autoCfg();S.screen='settings'}},
+  rm:d=>{S.names.splice(+d.i,1);autoCfg();S.cfg.mafia=Math.min(S.cfg.mafia,mafiaMax(S.names.length))},
   clear:(d,prev)=>{if(prev!=='clear'){S.confirm='clear';return}S.names=[];S.group=null;autoCfg()},
+  custom:()=>{S.cfg.custom=!S.cfg.custom;if(S.cfg.custom)S.fx='open'},
   inc:d=>{S.cfg[d.k]++;S.cfg.manual=true},dec:d=>{S.cfg[d.k]--;S.cfg.manual=true},
   auto:()=>{S.cfg.manual=false;autoCfg()},
-  mode:d=>{S.cfg.mode=d.v},reveal:()=>{S.cfg.reveal=!S.cfg.reveal},
+  mode:d=>{S.cfg.mode=d.v;if(d.v==='person')hush()},
+  reveal:()=>{S.cfg.reveal=!S.cfg.reveal},
   voicecfg:()=>{S.cfg.voice=!S.cfg.voice;if(S.cfg.voice)toSay='Voice narrator on.';else hush()},
   voice:()=>{S.cfg.voice=!S.cfg.voice;if(S.cfg.voice)toSay='Voice narrator on.';else hush()},
   repeat:()=>{S.menu=null;if(lastSaid)say(lastSaid,true)},
   mins:d=>{S.cfg.mins=Math.min(15,Math.max(1,S.cfg.mins+ +d.v))},
   start:()=>{if(!setupError())startGame()},
-  self:d=>{const i=+d.i;
-    if(S.screen==='reveal'){if(S.revealed.includes(i))return;S.ri=i;S.shown=true}
-    else if(S.screen==='night'&&S.night.stage==='grid'){if(S.night.done.includes(i)||!S.night.order.includes(i))return;S.night.cur=i;S.night.stage='act';S.pick=null}},
-  hide:()=>{S.shown=false;if(!S.revealed.includes(S.ri))S.revealed.push(S.ri);
-    if(S.revealed.length>=S.players.length){if(S.cfg.mode==='narrator')S.screen='narrready';else{beginNight();toSay='Everyone has their role. '+toSay}}},
+  self:d=>{const i=+d.i;haptic();
+    if(S.screen==='reveal'){if(S.revealed.includes(i))return;S.ri=i;S.flipped=false}
+    else if(S.screen==='night'&&S.night&&S.night.cur==null){if(S.night.done.includes(i)||!S.night.order.includes(i))return;S.night.cur=i;S.night.stage=null;S.flipped=false;S.pick=null}},
+  flip:()=>{if(S.flipped)return;S.flipped=true;S.fx='flip';haptic(20)},
+  unpick:()=>{S.flipped=false;if(S.screen==='reveal')S.ri=null;else if(S.night)S.night.cur=null},
+  hide:()=>{if(S.ri==null)return;if(!S.revealed.includes(S.ri))S.revealed.push(S.ri);S.ri=null;S.flipped=false;
+    if(S.revealed.length>=S.players.length){if(S.cfg.mode==='person')S.screen='narrready';else{beginNight();toSay='Everyone has their role. '+toSay}}},
   night:()=>{if(S.screen==='verdict')S.round++;beginNight()},
-  pick:d=>{S.pick=+d.i},
+  pick:d=>{S.pick=+d.i;haptic(6)},
   lock,
-  next:()=>{const N=S.night;if(S.cfg.mode==='narrator'){N.stage=null;N.idx++}else nightTurnDone(N.cur)},
+  next:()=>{const N=S.night;if(S.cfg.mode==='person'){N.stage=null;N.idx++}else turnDone(N.cur)},
   dawn:resolveNight,
-  day:()=>{S.screen='day';S.timer={left:S.cfg.mins*60,total:S.cfg.mins*60,running:false,endsAt:0,w60:0,w10:0};
-    toSay=`It's day ${S.round}. You have ${S.cfg.mins} minute${S.cfg.mins>1?'s':''} to find the Mafia. Start the timer and start talking.`},
-  tgo:()=>{const T=S.timer,l=tLeft();if(T.running){T.left=l;T.running=false}else{if(l===0){T.left=S.cfg.mins*60;T.w60=0;T.w10=0}T.endsAt=Date.now()+T.left*1000;T.running=true}},
-  tadd:d=>{const T=S.timer,l=Math.max(0,tLeft()+ +d.v);T.left=l;if(l>60)T.w60=0;if(l>10)T.w10=0;if(T.running)T.endsAt=Date.now()+l*1000},
-  vote:()=>{S.timer.left=tLeft();S.timer.running=false;S.screen='vote';S.pick=null;
+  day:()=>{const t=S.cfg.mins*60;S.screen='day';S.timer={left:t,total:t,running:true,endsAt:Date.now()+t*1000,w60:0,w10:0};
+    toSay=`Day ${S.round}. You have ${S.cfg.mins} minute${S.cfg.mins>1?'s':''} to find the Mafia. Go!`},
+  tgo:()=>{const T=S.timer,l=tLeft();if(T.running){T.left=l;T.running=false}else{if(l===0){T.left=60;T.total=60;T.w60=1;T.w10=0}T.endsAt=Date.now()+T.left*1000;T.running=true}},
+  tadd:d=>{const T=S.timer,l=Math.max(0,tLeft()+ +d.v);T.left=l;T.total=Math.max(T.total,l);if(l>60)T.w60=0;if(l>10)T.w10=0;if(T.running){if(l===0)T.running=false;else T.endsAt=Date.now()+l*1000}},
+  vote:()=>{if(S.timer){S.timer.left=tLeft();S.timer.running=false}S.screen='vote';S.pick=null;
     toSay='Time to vote. On the count of three, everyone point at who you think is in the Mafia. One. Two. Three.'},
-  elim:()=>{if(S.pick==null)return;const p=P(S.pick);p.alive=false;S.verdict={who:S.pick};
+  elim:()=>{if(S.pick==null)return;const p=P(S.pick);p.alive=false;S.verdict={who:S.pick};haptic(30);
     S.log.push(`<b>Day ${S.round}:</b> Town voted out ${esc(p.name)} (${ROLES[p.role].name}).`);
-    if(p.role==='jester'){S.winner='jester';S.jester=S.pick;toSay=`${p.name} has been voted out. ${p.name} was the Jester, and the Jester wins!`}
-    else{S.winner=checkWin();toSay=`${p.name} has been voted out.`+(S.cfg.reveal?` They were ${roleSay(p.role)}.`:'')+(S.winner?' '+winSay[S.winner]:' Night is coming.')}
+    if(p.role==='jester'){S.winner='jester';S.jester=S.pick;toSay=`The town voted out ${p.name}. ${p.name} was the Jester, and the Jester wins!`}
+    else{S.winner=checkWin();toSay=`The town voted out ${p.name}.`+(S.cfg.reveal?` They were ${roleSay(p.role)}.`:'')+(S.winner?' '+winSay[S.winner]:' Night is coming.')}
     S.screen='verdict';S.pick=null},
   noelim:()=>{S.verdict={who:null};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay='The town could not agree. Nobody was voted out. Night is coming.'},
   over:()=>{S.screen='over'},
   menu:()=>{S.menu='main'},
   close:()=>{S.menu=null;S.edit=null},
   roster:()=>{S.menu='roster'},
+  how:()=>{S.menu='how'},
   again:(d,prev)=>{if(S.screen!=='over'&&prev!=='again'){S.confirm='again';return}hush();startGame()},
-  setup:(d,prev)=>{if(S.screen!=='over'&&prev!=='setup'){S.confirm='setup';return}hush();S.screen='setup';S.menu=null},
+  home:(d,prev)=>{if(S.screen!=='over'&&prev!=='home'){S.confirm='home';return}quitHome()},
   /* groups */
   gsave:()=>{S.menu='gsave'},
-  gsaveok:()=>{const nm=cleanName(readInput('gname')).slice(0,30)||'';if(!nm){toast('Give the group a name');return 'keep'}
+  gsaveok:()=>{const nm=cleanName(readInput('gname'),30);if(!nm){toast('Give the group a name');return}
     let g=G.find(x=>x.name.toLowerCase()===nm.toLowerCase());
-    if(g){g.names=S.names.slice();g.name=nm;toast(`Updated “${nm}”`)}else{g={id:Date.now().toString(36)+rnd(1e6).toString(36),name:nm,names:S.names.slice()};G.push(g);toast(`Saved “${nm}”`)}
+    if(g){g.names=S.names.slice();toast(`Updated “${g.name}”`)}else{g={id:Date.now().toString(36)+rnd(1e6).toString(36),name:nm,names:S.names.slice()};G.push(g);toast(`Saved “${nm}”`)}
     S.group=g.id;saveG();S.menu=null},
-  gload:d=>{const g=G.find(x=>x.id===d.id);if(!g)return;S.names=g.names.slice();S.group=g.id;S.cfg.manual=false;autoCfg();toast(`Loaded “${g.name}”`)},
+  gupdate:()=>{const g=G.find(x=>x.id===S.group);if(!g)return;g.names=S.names.slice();saveG();toast(`Updated “${g.name}”`)},
+  gplay:d=>{const g=G.find(x=>x.id===d.id);if(!g)return;loadGroup(g);haptic();
+    if(g.names.length>=4)S.screen='settings';else{S.screen='players';toast('This group needs at least 4 players')}},
   gedit:d=>{const g=G.find(x=>x.id===d.id);if(!g)return;S.edit={id:g.id,name:g.name,names:g.names.slice()};S.menu='gedit'},
   germ:d=>{S.edit.names.splice(+d.i,1)},
-  geok:()=>{const E=S.edit,nm=cleanName(E.name).slice(0,30);if(!nm){toast('Give the group a name');return 'keep'}
-    const g=G.find(x=>x.id===E.id);if(!g)return;g.name=nm;g.names=E.names.slice();saveG();
-    if(S.group===g.id&&S.screen==='setup'){S.names=g.names.slice();autoCfg()}
-    toast(`Saved “${nm}”`);S.menu=null;S.edit=null},
-  geuse:()=>{const id=S.edit.id;if(A.geok()==='keep')return;A.gload({id})},
-  gedel:(d,prev)=>{if(prev!=='gedel'){S.confirm='gedel';return}G=G.filter(x=>x.id!==S.edit.id);if(S.group===S.edit.id)S.group=null;saveG();toast('Group deleted');S.menu=null;S.edit=null},
+  geok:()=>{const E=S.edit,nm=cleanName(E.name,30);if(!nm){toast('Give the group a name');return false}
+    const g=G.find(x=>x.id===E.id);if(!g)return false;g.name=nm;g.names=E.names.slice();saveG();
+    if(S.group===g.id&&!GAME.includes(S.screen)){S.names=g.names.slice();autoCfg()}
+    toast(`Saved “${nm}”`);S.menu=null;S.edit=null;return g},
+  geuse:()=>{const g=A.geok();if(!g)return;loadGroup(g);S.screen=g.names.length>=4?'settings':'players'},
+  gedel:(d,prev)=>{if(prev!=='gedel'){S.confirm='gedel';return}const id=S.edit.id;G=G.filter(x=>x.id!==id);if(S.group===id)S.group=null;saveG();toast('Group deleted');S.menu=null;S.edit=null},
   /* install */
-  install:()=>{S.menu='install';S.instKey=null},
-  inst:d=>{S.instKey=d.v},
+  install:()=>{S.menu='install'},
+  copylink:()=>{const url=location.origin+location.pathname;try{navigator.clipboard.writeText(url).then(()=>toast('Link copied — now open Safari'),()=>toast(url))}catch(e){toast(url)}},
 };
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;
-  if(b.classList.contains('veil')&&e.target.closest('[data-stop]'))return;
+function handle(b,e){
+  if(b.classList.contains('veil')&&e&&e.target.closest('[data-stop]'))return;
   if(b.disabled)return;const f=A[b.dataset.a];if(!f)return;
   const prev=S.confirm;S.confirm=null;
   f(b.dataset,prev);render();
-  if(toSay){say(toSay);toSay=null}});
+  if(toSay){say(toSay);toSay=null}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)handle(b,e);else if(S.confirm&&!e.target.closest('form,input')){S.confirm=null;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.menu){S.menu=null;S.edit=null;render()}});
 document.addEventListener('input',e=>{if(e.target.id==='gename'&&S.edit)S.edit.name=e.target.value});
-document.addEventListener('submit',e=>{e.preventDefault();
-  if(e.target.id==='gaddf'&&S.edit){if(!addTo(S.edit.names,readInput('gnm')))return;render();const n=document.getElementById('gnm');if(n)n.focus();return}
-  if(e.target.id==='addf'){if(!addTo(S.names,readInput('nm')))return;autoCfg();render();const n=document.getElementById('nm');if(n)n.focus()}});
+document.addEventListener('submit',e=>{e.preventDefault();S.confirm=null;
+  if(e.target.id==='gaddf'&&S.edit){const nm=addTo(S.edit.names,readInput('gnm'));if(!nm)return;render();const n=document.getElementById('gnm');if(n){n.value='';n.focus()}return}
+  if(e.target.id==='gsavef'){A.gsaveok();render();return}
+  if(e.target.id==='addf'){const nm=addTo(S.names,readInput('nm'));if(!nm)return;S.fx='pop:'+nm;autoCfg();haptic();render();const n=document.getElementById('nm');if(n)n.focus()}});
 
-setInterval(()=>{if(S.screen!=='day'||!S.timer||!S.timer.running)return;const T=S.timer,l=tLeft(),el=document.getElementById('clock');
-  if(el){el.textContent=fmt(l);el.classList.toggle('warn',l<=10)}
+/* timer loop */
+function paintTimer(){const T=S.timer;if(!T)return;const l=tLeft();
+  const el=document.getElementById('clock'),ring=document.getElementById('ring'),w=document.getElementById('timer');
+  if(el)el.textContent=l===0?"Time's up":fmt(l);
+  if(ring)ring.setAttribute('stroke-dashoffset',(CIRC*(1-l/T.total)).toFixed(1));
+  if(w){w.classList.toggle('warn',l<=10&&l>0);w.classList.toggle('up',l===0)}}
+setInterval(()=>{if(S.screen!=='day'||!S.timer||!S.timer.running)return;const T=S.timer,l=tLeft();paintTimer();
   if(l<=60&&l>50&&!T.w60&&T.total>90){T.w60=1;say('One minute left.')}
   if(l<=10&&l>5&&!T.w10){T.w10=1;say('Ten seconds.')}
-  if(l<=0){T.running=false;T.left=0;try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}say("Time's up. Time to vote.");render()}},250);
+  if(l<=0){T.running=false;T.left=0;haptic([200,100,200]);say("Time's up. Time to vote.");render()}},250);
 
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+window.__mafia={get S(){return S},get G(){return G},A,render};
+window.MafiaCore={get S(){return S},A,V,render,esc,toast,say,hush,haptic,ROLES,tag,rnd,shuffle,cleanName,save,
+  canVoice,targetsHTML:null,fmt:s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),CIRC,R0,winSay,roleSay,confetti:()=>confetti()};
 render();
 })();
 </script>
+<script src="online.js"></script>
 </body>
 </html>
