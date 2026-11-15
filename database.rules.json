@@ -1,24 +1,45 @@
 {
   "rules": {
+    "activity": {
+      ".read": "auth != null",
+      ".indexOn": ".value",
+      "$code": {
+        ".write": "auth != null && ((root.child('rooms/' + $code + '/host').val() === auth.uid && newData.isNumber()) || (!newData.exists() && (!root.child('rooms/' + $code).exists() || data.val() < now - 7200000)))"
+      }
+    },
     "rooms": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && data.child('host').val() === auth.uid",
-        "host": { ".write": "auth != null && (!data.exists() || data.val() === auth.uid)" },
-        "state": { ".write": "auth != null && root.child('rooms/' + $code + '/host').val() === auth.uid" },
-        "players": { "$uid": { ".write": "auth != null && (auth.uid === $uid || root.child('rooms/' + $code + '/host').val() === auth.uid)" } }
+        ".write": "auth != null && (data.child('host').val() === auth.uid || (!newData.exists() && root.child('activity/' + $code).val() < now - 7200000))",
+        "host": {
+          ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
+        },
+        "state": {
+          ".write": "auth != null && root.child('rooms/' + $code + '/host').val() === auth.uid"
+        },
+        "players": {
+          "$uid": {
+            ".write": "auth != null && (auth.uid === $uid || root.child('rooms/' + $code + '/host').val() === auth.uid)"
+          }
+        }
       }
     },
     "secrets": {
-      "$code": { "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && root.child('rooms/' + $code + '/host').val() === auth.uid"
-      } }
+      "$code": {
+        ".write": "auth != null && !newData.exists() && (!root.child('rooms/' + $code).exists() || root.child('activity/' + $code).val() < now - 7200000)",
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && root.child('rooms/' + $code + '/host').val() === auth.uid"
+        }
+      }
     },
     "actions": {
       "$code": {
         ".read": "auth != null && root.child('rooms/' + $code + '/host').val() === auth.uid",
-        "$uid": { ".write": "auth != null && auth.uid === $uid" }
+        ".write": "auth != null && !newData.exists() && (!root.child('rooms/' + $code).exists() || root.child('activity/' + $code).val() < now - 7200000)",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
       }
     }
   }

@@ -18,6 +18,9 @@ const EMU=qs.has('emu');
 const CFG=EMU?{apiKey:'demo-key',authDomain:'demo-mafia.firebaseapp.com',projectId:'demo-mafia',databaseURL:'https://demo-mafia-default-rtdb.firebaseio.com',appId:'1:1:web:1'}:FIREBASE_CONFIG;
 const FB='https://www.gstatic.com/firebasejs/11.10.0/';
 const CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ';
+// A room is abandoned once its host's phone hasn't checked in for this long. Must match the Firebase rules.
+const STALE_MS=(EMU&&window.__STALE_MS)||2*60*60*1000;
+const BEAT_MS=Math.min(60000,STALE_MS/4);
 
 const O={sub:'menu',busy:false,err:'',code:null,room:null,mine:null,actions:{},offset:0,unsubs:[],actUnsub:null,
   pick:null,flipKey:'',fx:null,once:{},said:{},wrote:{},qr:'',sentKey:'',leaving:false};
@@ -42,10 +45,26 @@ async function fb(){if(F)return F;if(connP)return connP;
       remove:p=>dbM.remove(r(p)),
       on:(p,cb)=>dbM.onValue(r(p),s=>cb(s.val()),e=>{console.warn('listen',p,e&&e.message)}),
       ts:()=>dbM.serverTimestamp(),
-      onDisc:p=>dbM.onDisconnect(r(p))};
+      onDisc:p=>dbM.onDisconnect(r(p)),
+      staleCodes:async(cutoff,n)=>{const q=dbM.query(r('activity'),dbM.orderByValue(),dbM.endAt(cutoff),dbM.limitToFirst(n));const v=(await dbM.get(q)).val()||{};return Object.keys(v)}};
+    sweep();
     return F})();
   try{return await connP}catch(e){connP=null;throw e}}
 const now=()=>Date.now()+O.offset;
+
+/* ---------- cleanup of abandoned rooms ---------- */
+async function wipe(code){const f=F;  // order matters for the rules: room data first, the activity marker last
+  for(const p of [`secrets/${code}`,`actions/${code}`,`rooms/${code}`,`activity/${code}`]){try{await f.remove(p)}catch(e){}}}
+async function sweep(){if(O.swept)return;O.swept=true;
+  try{await new Promise(r=>setTimeout(r,1500));  // let the server clock offset arrive first
+    const codes=await F.staleCodes(now()-STALE_MS-Math.min(60000,STALE_MS/10),25);
+    for(const c of codes)if(c!==O.code)await wipe(c);
+    O.sweptCount=(O.sweptCount||0)+codes.length}catch(e){console.warn('sweep',e&&e.message)}}
+let beatT=null;
+function heartbeat(){if(!F||!O.code||!isHost())return;F.set('activity/'+O.code,F.ts()).catch(()=>{})}
+function startBeat(){if(beatT)return;heartbeat();beatT=setInterval(heartbeat,BEAT_MS)}
+function stopBeat(){clearInterval(beatT);beatT=null}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&beatT)heartbeat()});
 
 /* ---------- derived state ---------- */
 const st=()=>(O.room&&O.room.state)||{};
@@ -80,11 +99,11 @@ function onRoom(){const r=O.room;
   if(!r||!r.host){const host=O.wasHost;leaveLocal();if(!host)toast('The host ended the game');return}
   const mine=r.players&&r.players[F.uid];
   if(!mine||!mine.name){leaveLocal();toast('You were removed from the game');return}
-  O.wasHost=isHost();
+  O.wasHost=isHost();if(isHost())startBeat();
   if(isHost()&&!O.actUnsub)O.actUnsub=F.on('actions/'+O.code,v=>{O.actions=v||{};hostTick();draw()});
   if(!mine.online)F.set(`rooms/${O.code}/players/${F.uid}/online`,true).catch(()=>{});
   hostTick();narrate();draw()}
-function leaveLocal(){unsubAll();O.code=null;O.room=null;O.mine=null;O.actions={};O.sub='menu';O.once={};O.wrote={};O.pick=null;O.flipKey='';O.leaving=false;
+function leaveLocal(){unsubAll();stopBeat();O.code=null;O.room=null;O.mine=null;O.actions={};O.sub='menu';O.once={};O.wrote={};O.pick=null;O.flipKey='';O.leaving=false;
   const s=S();s.net=null;s.screen='home';s.menu=null;M.save();M.render()}
 function netErr(e){const m=String(e&&(e.code||e.message)||e);
   if(/network|offline|unavailable|failed to fetch/i.test(m))return'Can\'t reach the game server. Check your internet.';
@@ -96,6 +115,7 @@ async function hostCreate(name){if(!name){toast('Type your name');return}O.busy=
   try{const f=await fb();let code='';
     for(let k=0;k<10;k++){code=Array.from({length:4},()=>CODE_CHARS[M.rnd(CODE_CHARS.length)]).join('');if(!(await f.get(`rooms/${code}/host`)))break}
     await f.set(`rooms/${code}/host`,f.uid);
+    await f.set('activity/'+code,f.ts()).catch(()=>{});  // fine if the rules haven't been updated yet
     await f.update('rooms/'+code,{created:f.ts(),['players/'+f.uid]:{name,joined:f.ts(),online:true},state:{phase:'lobby',gid:0,round:0,cfg:{manual:false,reveal:true,mins:3,voice:true,mafia:1,doctor:1,detective:0,jester:0}}});
     S().net={code,name};M.save();await enter(code)}
   catch(e){O.busy=false;O.err=netErr(e);draw()}}
@@ -114,8 +134,10 @@ async function join(code,name){code=(code||'').toUpperCase().replace(/[^A-Z]/g,'
     S().net={code,name};M.save();await enter(code)}
   catch(e){O.busy=false;O.err=e&&e.msg?e.msg:netErr(e);draw()}}
 async function leave(){const f=F,code=O.code;if(!f||!code){leaveLocal();return}O.leaving=true;
-  try{if(isHost()){const ids=Object.keys((O.room&&O.room.players)||{});unsubAll();
-      await Promise.all(ids.map(u=>f.remove(`secrets/${code}/${u}`).catch(()=>{})));await f.remove('rooms/'+code);toast('Game ended')}
+  try{if(isHost()){const ids=Object.keys((O.room&&O.room.players)||{});unsubAll();stopBeat();
+      await Promise.all(ids.map(u=>f.remove(`secrets/${code}/${u}`).catch(()=>{})));await f.remove('rooms/'+code);
+      for(const p of [`secrets/${code}`,`actions/${code}`,`activity/${code}`]){try{await f.remove(p)}catch(e){}}
+      toast('Game ended')}
     else{unsubAll();try{await f.onDisc(`rooms/${code}/players/${f.uid}/online`).cancel()}catch(e){}await f.remove(`rooms/${code}/players/${f.uid}`)}}
   catch(e){}
   leaveLocal()}
@@ -408,8 +430,8 @@ window.MafiaOnline={
   phase:phaseOf,sheet,
   after(){O.fx=null;const k=phaseKey();if(k!==lastPhaseKey){const first=!lastPhaseKey;lastPhaseKey=k;O.pick=null;O.changing=false;if(st().phase!=='vote')O.myVote=null;
     if(!first&&O.room){const s=st(),sp={roles:{kind:'deal',title:'Secret roles',sub:'Check your phone. Keep it hidden!'},night:{kind:'night',title:'Night '+s.round,sub:'Take your turn on your phone.'},morning:{kind:'day',title:'Morning',sub:'Day '+s.round+'. Everyone, wake up.'},vote:{kind:'vote',title:'Time to vote',sub:'Vote on your phone.'},verdict:{kind:'verdict',title:'The verdict',sub:'The votes are in…'}}[s.phase];if(sp)M.splash(sp)}}},
-  open(){O.err='';if(!O.code)O.sub='menu'},
-  _O:O,get _F(){return F}
+  open(){O.err='';if(!O.code)O.sub='menu';fb().catch(()=>{})},
+  _O:O,get _F(){return F},_sweep:()=>{O.swept=false;return sweep()}
 };
 M.V.online=view;
 
