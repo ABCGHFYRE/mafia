@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,500;1,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0e0b0c;--card:#1a1517;--line:#30272b;--text:#f3ede7;--muted:#a1958e;--red:#c8283a;--red2:#e0465a;--gold:#d9b26f;--green:#4fbf87;
   --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.4,.5,1)}
@@ -317,6 +317,9 @@ details[open] summary::after{content:'−'}
 .shint{position:absolute;top:max(40px,calc(env(safe-area-inset-top) + 24px));left:0;right:0;text-align:center;color:#fff;font-weight:600;font-size:17px;text-shadow:0 2px 8px #000}
 .scancancel{position:absolute;bottom:max(28px,calc(env(safe-area-inset-bottom) + 12px));left:24px;right:24px;background:#000000aa;color:#fff}
 
+.story{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:500;font-size:18px;line-height:1.5;color:#e9dfd6;max-width:34ch;margin-top:14px;padding:14px 18px;border-left:3px solid var(--gold);background:#d9b26f12;border-radius:0 14px 14px 0;text-align:left}
+.enter .story{animation:rise .7s var(--ease) 1.5s both}
+
 /* phase splash */
 .splash{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:30px;animation:fadein .35s var(--ease) both;overflow:hidden}
 .splash.out{animation:splout .45s var(--ease) both;pointer-events:none}
@@ -414,8 +417,46 @@ function say(text,force){if(!text||!synth)return;if(!force&&(!S.cfg.voice||S.cfg
   if(busy){try{synth.cancel()}catch(e){}setTimeout(()=>speakNow(text),180)}else speakNow(text)}
 ['touchend','click','keydown'].forEach(ev=>document.addEventListener(ev,unlockVoice,{capture:true,passive:true}));
 function hush(){try{synth&&synth.cancel()}catch(e){}}
+const STORIES={
+  kill:[
+    'The town fell asleep to the sound of rain. Just after midnight, a shadow slipped past the bakery. By sunrise, {name}\'s front door was wide open, and {name} was gone.',
+    '{name} stepped out for a late-night walk to clear their head. They never made it back. All that was left was a single black glove on the sidewalk.',
+    'At three in the morning, the church bell rang once, though no one was in the tower. When the town gathered at dawn, {name}\'s bed was empty.',
+    '{name} heard a knock at the door and thought it was a friend. It wasn\'t. The Mafia sends its regards.',
+    'The streetlights flickered out across town. When they came back on, {name}\'s porch light was the only one still dark.',
+    'Someone left a red rose on {name}\'s doorstep last night. By morning the rose was still there. {name} was not.',
+    '{name} was closing up the diner late. The jukebox kept playing long after midnight, but {name} never walked out the door.',
+    'A black car with no license plates idled outside {name}\'s house all night. At dawn, the car was gone, and so was {name}.',
+    'The dogs howled at midnight and the whole town pulled their blankets tighter. Everyone except {name}, who won\'t be waking up this morning.',
+    '{name} found a note under their pillow that said, sleep well. It was the last thing they ever read.',
+    'The fog rolled in thick off the river. Somewhere inside it, {name} took a wrong turn, and the Mafia was waiting.',
+    '{name} swore they heard footsteps on the roof. Nobody believed them. Nobody will make that mistake again.'],
+  save:[
+    'Footsteps crept through the dark toward someone\'s door. But a quiet figure in a white coat got there first.',
+    'The Mafia struck in the dead of night. By morning, their victim was sitting up in bed, bandaged and very confused.',
+    'A scream echoed through town at two in the morning. Then silence. Then someone saying, hold still, this might sting.',
+    'The Mafia\'s plan was perfect. Their timing was perfect. Their target? Perfectly fine, thanks to someone with a medical degree.',
+    'Someone woke up this morning with a mysterious bandage and no memory of the night. Lucky for them, the Doctor makes house calls.'],
+  quiet:['The night passed without a sound. Maybe even the Mafia needed a night off.','Not a single door creaked last night. Somehow, that\'s even scarier.'],
+  out:[
+    'The town gathered in the square, shouting over each other. {name} pleaded their case, but the crowd had made up its mind.',
+    'With a show of hands and a lot of yelling, the town put {name} on the next train out of town.',
+    '{name} tried to talk their way out of it. It did not work.',
+    'The votes were counted twice, just to be sure. Both times, the answer was {name}.',
+    'The town marched {name} to the edge of town and shut the gate behind them.'],
+  jester:['{name} burst out laughing as the last vote came in. Wait for it.','{name} took a bow as the town voted them out. Something felt very wrong.'],
+  none:['The town argued until sunset and couldn\'t agree on anything. Everyone goes home a little more suspicious.','Fingers were pointed. Voices were raised. Nobody was voted out, and the Mafia is smiling somewhere.'],
+  town:['With the last of the Mafia gone, the town finally sleeps soundly. The streets are safe again.','The final member of the Mafia was led away in handcuffs. Tonight, every door in town stays unlocked.'],
+  mafia:['One by one, the lights went out across town. The Mafia now runs every shop, every street and every vote.','The town never stood a chance. The Mafia owns this place now.']
+};
+let storyUsed=[];
+function story(kind,name){const list=STORIES[kind];if(!list)return'';let idx=list.map((_,i)=>i).filter(i=>!storyUsed.includes(kind+i));
+  if(!idx.length){storyUsed=storyUsed.filter(k=>k.replace(/\d+$/,'')!==kind);idx=list.map((_,i)=>i)}
+  const i=idx[rnd(idx.length)];storyUsed.push(kind+i);return list[i].replace(/\{name\}/g,name||'someone')}
+const outRoleSay=r=>r==='mafia'?'Good call. They were in the Mafia!':r==='villager'?'Uh oh. They were just a Villager.':`Uh oh. They were the ${ROLES[r].name}!`;
 const roleSay=r=>r==='mafia'?'in the Mafia':r==='villager'?'a Villager':'the '+ROLES[r].name;
-const winSay={town:'The town wins! Every member of the Mafia has been caught.',mafia:'The Mafia wins. They have taken over the town.'};
+const winSay={town:'The town wins!',mafia:'The Mafia wins!'};
+function winStory(w){return w==='town'||w==='mafia'?story(w)+' '+winSay[w]:''}
 const nightSay=()=>`Night ${S.round}. Everyone, close your eyes. Pass the phone around the circle, and only open your eyes when it is in your hands.`;
 const dealSay='Pass the phone around the circle. When it reaches you, tap your name to see your secret role. Keep it to yourself.';
 
@@ -572,7 +613,8 @@ function vNightPerson(){const N=S.night,alive=aliveIdx();
 function vMorning(){const M=S.morning,k=M.killed!=null?P(M.killed):null;
   return gameTop()+`<div class="stage"><div class="sun"></div><div class="kicker">Good morning · Day ${S.round}</div>
   ${k?`<p class="lead">Last night, the Mafia killed</p><div class="bigname blur red">${esc(k.name)}</div>${S.cfg.reveal?`<p class="lead late">They were ${tag(k.role)}</p>`:''}`
-     :`<div class="bigname blur" style="font-size:44px">Everyone survived!</div><p class="lead late">${M.saved?'The Mafia struck — but the Doctor saved them.':'A quiet night. Too quiet.'}</p>`}</div>
+     :`<div class="bigname blur" style="font-size:44px">Everyone survived!</div><p class="lead late">${M.saved?'The Mafia struck — but the Doctor saved them.':'A quiet night. Too quiet.'}</p>`}
+  ${M.story?`<p class="story">${esc(M.story)}</p>`:''}</div>
   <div class="dock">${S.winner?`<button class="btn big" data-a="over">See who won</button>`:`<button class="btn big" data-a="day">Start discussion</button>`}</div>`}
 
 const R0=88,CIRC=2*Math.PI*R0;
@@ -591,12 +633,12 @@ function vVote(){const alive=aliveIdx();
   <div class="dock"><button class="btn big" data-a="elim" ${S.pick==null?'disabled':''}>${S.pick==null?'Pick a player':'Vote out '+esc(P(S.pick).name)}</button><button class="btn ghost" data-a="noelim">It's a tie — skip</button></div>`}
 
 function vVerdict(){const v=S.verdict,p=v.who!=null?P(v.who):null,show=p&&(S.cfg.reveal||p.role==='jester');
-  return gameTop()+`<div class="stage"><div class="glyph">⚖️</div>${p?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(p.name)}</div>${show?`<p class="lead late">They were ${tag(p.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">The town couldn't agree.</p>`}</div>
+  return gameTop()+`<div class="stage"><div class="glyph">⚖️</div>${p?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(p.name)}</div>${show?`<p class="lead late">They were ${tag(p.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">The town couldn't agree.</p>`}${v.story?`<p class="story">${esc(v.story)}</p>`:''}</div>
   <div class="dock">${S.winner?`<button class="btn big" data-a="over">See who won</button>`:`<button class="btn big" data-a="night">Start Night ${S.round+1}</button>`}</div>`}
 
 function rosterHTML(){return`<div class="roster">${S.players.map(p=>`<div class="row ${p.alive?'':'dead'}"><span>${esc(p.name)}</span>${tag(p.role)}</div>`).join('')}</div>`}
 function vOver(){const W={town:['Town wins!','Every member of the Mafia was caught.','🏛️'],mafia:['Mafia wins!','The Mafia took over the town.','🔪'],jester:['Jester wins!',S.jester!=null?esc(P(S.jester).name)+' tricked everyone into voting them out.':'','🃏']}[S.winner]||['Game over','',''];
-  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">Game over · ${S.round} day${S.round>1?'s':''}</div><div class="bigname blur ${S.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p></div>
+  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">Game over · ${S.round} day${S.round>1?'s':''}</div><div class="bigname blur ${S.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p>${S.winStory?`<p class="story" style="margin:16px auto 0">${esc(S.winStory)}</p>`:''}</div>
   <section class="card"><div class="card-h"><h3>Everyone's role</h3></div>${rosterHTML()}</section>
   <details class="card"><summary>What happened</summary><div class="log">${S.log.map(l=>`<div>${l}</div>`).join('')}</div></details>
   <div class="dock"><button class="btn big" data-a="again">Play again</button><button class="btn ghost" data-a="home">Home</button></div>`}
@@ -673,7 +715,7 @@ function startGame(){autoCfg();const c=S.cfg,n=S.names.length;
   if(c.doctor)roles.push('doctor');if(c.detective)roles.push('detective');if(c.jester)roles.push('jester');
   while(roles.length<n)roles.push('villager');shuffle(roles);
   S.players=S.names.map((name,i)=>({name,role:roles[i],alive:true}));
-  Object.assign(S,{screen:'reveal',ri:null,flipped:false,revealed:[],round:1,log:[],winner:null,jester:null,pick:null,menu:null,confirm:null,night:null,confettiDone:false,morning:null,verdict:null,timer:null});
+  Object.assign(S,{winStory:'',screen:'reveal',ri:null,flipped:false,revealed:[],round:1,log:[],winner:null,jester:null,pick:null,menu:null,confirm:null,night:null,confettiDone:false,morning:null,verdict:null,timer:null});
   toSay=dealSay;pendingSplash={kind:'deal',title:'Secret roles',sub:'Pass the phone around. Tap your name when it reaches you.'};}
 function beginNight(){S.pick=null;S.flipped=false;
   S.night={votes:[],save:null,invest:null,idx:0,stage:null,done:[],cur:null};
@@ -686,13 +728,13 @@ function resolveNight(){const N=S.night;let t=null;
   if(N.votes.length){const cnt={};N.votes.forEach(v=>cnt[v.t]=(cnt[v.t]||0)+1);const mx=Math.max(...Object.values(cnt));N.votes.forEach(v=>{if(cnt[v.t]===mx)t=v.t})}
   let killed=null,saved=false;
   if(t!=null){if(N.save===t)saved=true;else{killed=t;P(t).alive=false}}
-  S.morning={killed,saved};
+  S.morning={killed,saved,story:t==null?story('quiet'):saved?story('save'):story('kill',P(killed).name)};
   S.log.push(`<b>Night ${S.round}:</b> `+(t==null?'The Mafia did nothing.':`Mafia targeted ${esc(P(t).name)} — ${saved?'saved by the Doctor.':'killed.'}`)+(N.invest!=null?` Detective checked ${esc(P(N.invest).name)}.`:''));
   S.winner=checkWin();S.screen='morning';S.pick=null;haptic(30);pendingSplash={kind:'day',title:'Morning',sub:'Day '+S.round+'. Everyone, open your eyes.'};
-  let line='Good morning, everyone. ';
-  if(killed!=null)line+=`Last night, the Mafia killed ${P(killed).name}.`+(S.cfg.reveal?` They were ${roleSay(P(killed).role)}.`:'');
-  else line+=saved?'The Mafia struck last night, but the doctor saved their target. Everyone survived.':'It was a quiet night. Everyone survived.';
-  if(S.winner)line+=' '+winSay[S.winner];
+  let line='Good morning, everyone. '+S.morning.story+' ';
+  if(killed!=null)line+=`The Mafia killed ${P(killed).name}.`+(S.cfg.reveal?` They were ${roleSay(P(killed).role)}.`:'');
+  else line+=saved?'The doctor saved the Mafia\'s target. Everyone survived.':'Everyone survived.';
+  if(S.winner){S.winStory=winStory(S.winner);line+=' '+S.winStory}
   toSay=line;}
 function lock(){const N=S.night,pk=S.pick;if(pk==null)return;haptic(15);
   if(S.cfg.mode==='person'){const st=N.steps[N.idx];
@@ -746,10 +788,11 @@ const A={
     toSay='Time to vote. On the count of three, everyone point at who you think is in the Mafia. One. Two. Three.'},
   elim:()=>{if(S.pick==null)return;const p=P(S.pick);p.alive=false;S.verdict={who:S.pick};haptic(30);
     S.log.push(`<b>Day ${S.round}:</b> Town voted out ${esc(p.name)} (${ROLES[p.role].name}).`);
-    if(p.role==='jester'){S.winner='jester';S.jester=S.pick;toSay=`The town voted out ${p.name}. ${p.name} was the Jester, and the Jester wins!`}
-    else{S.winner=checkWin();toSay=`The town voted out ${p.name}.`+(S.cfg.reveal?` They were ${roleSay(p.role)}.`:'')+(S.winner?' '+winSay[S.winner]:' Night is coming.')}
+    if(p.role==='jester'){S.winner='jester';S.jester=S.pick;S.verdict.story=story('jester',p.name);S.winStory=`${p.name} was the Jester all along, and the Jester wins!`;toSay=`${S.verdict.story} The town voted out ${p.name}. ${S.winStory}`}
+    else{S.winner=checkWin();S.verdict.story=story('out',p.name);if(S.winner)S.winStory=winStory(S.winner);
+      toSay=`${S.verdict.story} The town voted out ${p.name}.`+(S.cfg.reveal?` ${outRoleSay(p.role)}`:'')+(S.winner?' '+S.winStory:' Night is coming.')}
     S.screen='verdict';S.pick=null;pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'}},
-  noelim:()=>{pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'};S.verdict={who:null};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay='The town could not agree. Nobody was voted out. Night is coming.'},
+  noelim:()=>{pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'};S.verdict={who:null,story:story('none')};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay=S.verdict.story+' The town could not agree. Nobody was voted out. Night is coming.'},
   over:()=>{S.screen='over'},
   menu:()=>{S.menu='main'},
   close:()=>{S.menu=null;S.edit=null},
@@ -807,7 +850,7 @@ setInterval(()=>{if(S.screen!=='day'||!S.timer||!S.timer.running)return;const T=
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 window.__mafia={get S(){return S},get G(){return G},A,render};
 window.MafiaCore={get S(){return S},A,V,render,esc,toast,say,hush,haptic,ROLES,tag,rnd,shuffle,cleanName,save,
-  canVoice,splash:o=>showSplash(o),fmt:s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),CIRC,R0,winSay,roleSay,confetti:()=>confetti()};
+  canVoice,splash:o=>showSplash(o),fmt:s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),CIRC,R0,winSay,roleSay,story,outRoleSay,winStory,confetti:()=>confetti()};
 render();
 })();
 </script>

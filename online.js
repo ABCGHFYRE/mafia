@@ -148,14 +148,17 @@ function resolveNight(){const s=st(),R=allRoles(),al=aliveU();
   if(t){if(save===t)saved=true;else{killed=t;aliveMap[t]=false}}
   const al2=order().filter(u=>aliveMap[u]);const w=winner(al2,u=>R[u]);
   const log=(s.log||[]).concat([`<b>Night ${s.round}:</b> `+(t==null?'The Mafia did nothing.':`Mafia targeted ${esc(nameOf(t))} — ${saved?'saved by the Doctor.':'killed.'}`)+(chk?` Detective checked ${esc(nameOf(chk))}.`:'')]);
-  return setState({phase:'morning',done:null,alive:aliveMap,morning:{killed,saved,role:killed&&s.cfg.reveal?R[killed]:null},winner:w||null,roles:w?R:null,log})}
+  const tale=t==null?M.story('quiet'):saved?M.story('save'):M.story('kill',nameOf(killed));
+  return setState({phase:'morning',done:null,alive:aliveMap,morning:{killed,saved,role:killed&&s.cfg.reveal?R[killed]:null,story:tale},winner:w||null,winStory:w?M.winStory(w):null,roles:w?R:null,log})}
 function tally(force){const s=st(),R=allRoles(),al=aliveU(),votes={},cnt={};
   al.forEach(u=>{const a=act(u,'vote');if(a){votes[nameOf(u)]=nameOf(a.target);cnt[a.target]=(cnt[a.target]||0)+1}});
   let top=null,mx=0,tie=false;for(const k in cnt){if(cnt[k]>mx){mx=cnt[k];top=k;tie=false}else if(cnt[k]===mx)tie=true}
   const who=top&&top!=='skip'&&!tie?top:null;const aliveMap=Object.assign({},s.alive);let w=null,jester=null;
   if(who){aliveMap[who]=false;if(R[who]==='jester'){w='jester';jester=who}else w=winner(order().filter(u=>aliveMap[u]),u=>R[u])}
   const log=(s.log||[]).concat([`<b>Day ${s.round}:</b> `+(who?`Town voted out ${esc(nameOf(who))} (${ROLES[R[who]].name}).`:'No one was voted out.')]);
-  return setState({phase:'verdict',done:null,alive:aliveMap,verdict:{who,role:who&&(s.cfg.reveal||R[who]==='jester')?R[who]:null,votes,count:cnt},winner:w,jester,roles:w?R:null,log})}
+  const tale=who?(R[who]==='jester'?M.story('jester',nameOf(who)):M.story('out',nameOf(who))):M.story('none');
+  const ws=w==='jester'?`${nameOf(who)} was the Jester all along, and the Jester wins!`:w?M.winStory(w):null;
+  return setState({phase:'verdict',done:null,alive:aliveMap,verdict:{who,role:who&&(s.cfg.reveal||R[who]==='jester')?R[who]:null,votes,count:cnt,story:tale},winner:w,winStory:ws,jester,roles:w?R:null,log})}
 async function hostStart(){const s=st(),ids=lobbyOrder(),n=ids.length,c=effCfg(n),err=cfgError(n,c);if(err){toast(err);return}
   const roles=[];for(let k=0;k<c.mafia;k++)roles.push('mafia');if(c.doctor)roles.push('doctor');if(c.detective)roles.push('detective');if(c.jester)roles.push('jester');
   while(roles.length<n)roles.push('villager');M.shuffle(roles);
@@ -165,7 +168,7 @@ async function hostStart(){const s=st(),ids=lobbyOrder(),n=ids.length,c=effCfg(n
   O.once={};O.wrote={};
   await Promise.all(ids.map(u=>F.set(`secrets/${O.code}/${u}`,upd[u])));
   const alive={};ids.forEach(u=>alive[u]=true);
-  await setState({phase:'roles',gid,round:1,order:ids,names,alive,done:null,morning:null,verdict:null,timer:null,winner:null,jester:null,roles:null,log:[],cfg:c});
+  await setState({phase:'roles',gid,round:1,order:ids,names,alive,done:null,morning:null,verdict:null,timer:null,winner:null,winStory:null,jester:null,roles:null,log:[],cfg:c});
   haptic(20)}
 function hostForce(){const s=st();once('go-'+phaseKey(),()=>{if(s.phase==='roles')return setState({phase:'night',done:null});if(s.phase==='night')return resolveNight();if(s.phase==='vote')return tally(true)})}
 
@@ -174,10 +177,10 @@ function narrate(){if(!isHost())return;const s=st(),c=s.cfg||{};const k=phaseKey
   let line='';
   if(s.phase==='roles')line='Everyone, check your phone for your secret role. Don\'t let anyone see it.';
   else if(s.phase==='night')line=`Night ${s.round}. Everyone, take your turn on your phone. Keep your screen hidden.`;
-  else if(s.phase==='morning'){const m=s.morning||{};line='Good morning, everyone. '+(m.killed?`Last night, the Mafia killed ${nameOf(m.killed)}.`+(m.role?` They were ${roleSay(m.role)}.`:''):m.saved?'The Mafia struck last night, but the doctor saved their target. Everyone survived.':'It was a quiet night. Everyone survived.');if(s.winner)line+=' '+M.winSay[s.winner]}
+  else if(s.phase==='morning'){const m=s.morning||{};line='Good morning, everyone. '+(m.story?m.story+' ':'')+(m.killed?`The Mafia killed ${nameOf(m.killed)}.`+(m.role?` They were ${roleSay(m.role)}.`:''):m.saved?'The doctor saved the Mafia\'s target. Everyone survived.':'Everyone survived.');if(s.winner)line+=' '+(s.winStory||M.winSay[s.winner])}
   else if(s.phase==='day')line=`Day ${s.round}. You have ${c.mins} minute${c.mins>1?'s':''} to find the Mafia. Go!`;
   else if(s.phase==='vote')line='Time to vote. On your phone, pick who you think is in the Mafia.';
-  else if(s.phase==='verdict'){const v=s.verdict||{};line=v.who?`The town voted out ${nameOf(v.who)}.`+(s.winner==='jester'?` ${nameOf(v.who)} was the Jester, and the Jester wins!`:(v.role?` They were ${roleSay(v.role)}.`:'')+(s.winner?' '+M.winSay[s.winner]:' Night is coming.')):'The town could not agree. Nobody was voted out.'}
+  else if(s.phase==='verdict'){const v=s.verdict||{};line=(v.story?v.story+' ':'')+(v.who?`The town voted out ${nameOf(v.who)}.`+(s.winner==='jester'?' '+s.winStory:(v.role?' '+M.outRoleSay(v.role):'')+(s.winner?' '+(s.winStory||M.winSay[s.winner]):' Night is coming.')):'The town could not agree. Nobody was voted out.')}
   if(line)M.say(line,true)}
 
 /* ---------- timer ---------- */
@@ -308,7 +311,7 @@ function allKnownMafia(){return myRole()==='mafia'?(O.mine.crew||[]):[]}
 function vMorning(){const s=st(),m=s.morning||{};
   return top('Day '+s.round)+`<div class="stage"><div class="sun"></div><div class="kicker">Good morning · Day ${s.round}</div>
   ${m.killed?`<p class="lead">Last night, the Mafia killed</p><div class="bigname blur red">${esc(nameOf(m.killed))}</div>${m.role?`<p class="lead late">They were ${tag(m.role)}</p>`:''}${m.killed===me()?'<p class="lead late">That\'s you. You can watch, but no talking about the game!</p>':''}`
-   :`<div class="bigname blur" style="font-size:44px">Everyone survived!</div><p class="lead late">${m.saved?'The Mafia struck — but the Doctor saved them.':'A quiet night. Too quiet.'}</p>`}</div>
+   :`<div class="bigname blur" style="font-size:44px">Everyone survived!</div><p class="lead late">${m.saved?'The Mafia struck — but the Doctor saved them.':'A quiet night. Too quiet.'}</p>`}${m.story?`<p class="story">${esc(m.story)}</p>`:''}</div>
   <div class="dock">${s.winner?hostOnly(`<button class="btn big" data-a="oover">See who won</button>`,'Game over! Waiting for the host…'):hostOnly(`<button class="btn big" data-a="oday">Start discussion</button>`,'Waiting for the host to start the discussion…')}</div>`}
 
 function vDay(){const s=st(),T=s.timer||{total:1},l=tLeft(),al=aliveU(),dead=order().filter(u=>!alive(u));
@@ -328,13 +331,13 @@ function vVote(){const s=st(),u=me(),al=aliveU();
   <div class="dock"><button class="btn big" data-a="ovotecast" ${O.pick==null?'disabled':''}>${O.pick==null?'Pick a player':'Vote for '+esc(nameOf(O.pick))}</button><button class="btn ghost" data-a="ovoteskip">Skip — don't vote anyone out</button></div>`}
 
 function vVerdict(){const s=st(),v=s.verdict||{};const votes=v.votes||{};
-  return top('Day '+s.round)+`<div class="stage" style="min-height:34vh"><div class="glyph">⚖️</div>${v.who?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(nameOf(v.who))}</div>${v.role?`<p class="lead late">They were ${tag(v.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">It was a tie, or most people skipped.</p>`}</div>
+  return top('Day '+s.round)+`<div class="stage" style="min-height:34vh"><div class="glyph">⚖️</div>${v.who?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(nameOf(v.who))}</div>${v.role?`<p class="lead late">They were ${tag(v.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">It was a tie, or most people skipped.</p>`}${v.story?`<p class="story">${esc(v.story)}</p>`:''}</div>
   ${Object.keys(votes).length?`<section class="card late"><div class="card-h"><h3>Votes</h3></div><div class="votes">${Object.keys(votes).map(k=>`<div><span>${esc(k)}</span><span class="arrow">→</span><b>${esc(votes[k])}</b></div>`).join('')}</div></section>`:''}
   <div class="dock">${s.winner?hostOnly(`<button class="btn big" data-a="oover">See who won</button>`,'Game over! Waiting for the host…'):hostOnly(`<button class="btn big" data-a="onext">Start Night ${s.round+1}</button>`,'Waiting for the host to start the night…')}</div>`}
 
 function vOver(){const s=st(),R=s.roles||{};const W={town:['Town wins!','Every member of the Mafia was caught.','🏛️'],mafia:['Mafia wins!','The Mafia took over the town.','🔪'],jester:['Jester wins!',esc(nameOf(s.jester))+' tricked everyone into voting them out.','🃏']}[s.winner]||['Game over','',''];
   const myTeam=R[me()]?ROLES[R[me()]].team:null,won=(s.winner==='town'&&myTeam==='town')||(s.winner==='mafia'&&myTeam==='mafia')||(s.winner==='jester'&&s.jester===me());
-  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">${won?'You won!':'Game over'} · ${s.round} day${s.round>1?'s':''}</div><div class="bigname blur ${s.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p></div>
+  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">${won?'You won!':'Game over'} · ${s.round} day${s.round>1?'s':''}</div><div class="bigname blur ${s.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p>${s.winStory?`<p class="story" style="margin:16px auto 0">${esc(s.winStory)}</p>`:''}</div>
   <section class="card"><div class="card-h"><h3>Everyone's role</h3></div><div class="roster">${order().map(u=>`<div class="row ${alive(u)?'':'dead'}"><span>${esc(nameOf(u))}</span>${R[u]?tag(R[u]):''}</div>`).join('')}</div></section>
   <details class="card"><summary>What happened</summary><div class="log">${(s.log||[]).map(l=>`<div>${l}</div>`).join('')}</div></details>
   <div class="dock">${isHost()?`<button class="btn big" data-a="oagain">Play again — same lobby</button><button class="btn ghost danger" data-a="oend">${S().confirm==='oend'?'Tap again to end for everyone':'End game'}</button>`:`<p class="small muted c">Waiting for the host to start another round…</p><button class="btn ghost" data-a="oleave">Leave</button>`}</div>`}
@@ -382,7 +385,7 @@ Object.assign(A,{
   ochange:()=>{O.changing=true;O.pick=null},
   onext:()=>{const s=st();setState({phase:'night',round:s.round+1,done:null,verdict:null,morning:null});O.pick=null},
   oover:()=>setState({phase:'over'}),
-  oagain:()=>{setState({phase:'lobby',done:null,winner:null,roles:null,morning:null,verdict:null,timer:null});O.pick=null},
+  oagain:()=>{setState({phase:'lobby',done:null,winner:null,winStory:null,roles:null,morning:null,verdict:null,timer:null});O.pick=null},
   oend:(d,prev)=>{if(prev!=='oend'){S().confirm='oend';return}leave()},
   oleave:(d,prev)=>{if(st().phase!=='lobby'&&st().phase!=='over'&&prev!=='oleave'){S().confirm='oleave';return}leave()},
   oforce:()=>{if(!O.confirmForce){O.confirmForce=true;setTimeout(()=>{O.confirmForce=false;draw()},4000);return}O.confirmForce=false;hostForce()},
