@@ -329,6 +329,10 @@ details[open] summary::after{content:'−'}
 .vchip.on{border-color:var(--gold);background:#2a2015}
 .vchip i{position:absolute;top:6px;right:8px;font-style:normal;color:var(--green);font-size:12px}
 .vnote{font-size:13px;color:var(--muted)}
+.vrow{grid-template-columns:repeat(2,1fr)!important}
+.vchip.playing{border-color:var(--gold);box-shadow:0 0 0 3px #d9b26f33;animation:pulse 1.4s ease-in-out infinite}
+.vstatus{font-size:14px;color:#e2d8d1;background:#ffffff08;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.vstatus.ok{color:#bff0d6;background:#4fbf8714;border-color:#4fbf8744}
 .vdl{display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--muted)}
 .vdl .bar{height:8px;border-radius:9px;background:#ffffff12;overflow:hidden}
 .vdl .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f3d49b);transition:width .3s}
@@ -454,7 +458,7 @@ function story(kind,name){const list=STORIES[kind];if(!list)return'';let idx=lis
 const outRoleSay=r=>r==='mafia'?'Good call. They were in the Mafia!':r==='villager'?'Uh oh. They were just a Villager.':`Uh oh. They were the ${ROLES[r].name}!`;
 const roleSay=r=>r==='mafia'?'in the Mafia':r==='villager'?'a Villager':'the '+ROLES[r].name;
 const winSay={town:'The town wins!',mafia:'The Mafia wins!'};
-function winStory(w){return w==='town'||w==='mafia'?story(w)+' '+winSay[w]:''}
+function winStory(w){return w==='town'||w==='mafia'?story(w)+' | '+winSay[w]:''}
 const nightSay=()=>`Night ${S.round}. Everyone, close your eyes. Pass the phone around the circle, and only open your eyes when it is in your hands.`;
 const dealSay='Pass the phone around the circle. When it reaches you, tap your name to see your secret role. Keep it to yourself.';
 
@@ -636,7 +640,7 @@ function vVerdict(){const v=S.verdict,p=v.who!=null?P(v.who):null,show=p&&(S.cfg
 
 function rosterHTML(){return`<div class="roster">${S.players.map(p=>`<div class="row ${p.alive?'':'dead'}"><span>${esc(p.name)}</span>${tag(p.role)}</div>`).join('')}</div>`}
 function vOver(){const W={town:['Town wins!','Every member of the Mafia was caught.','🏛️'],mafia:['Mafia wins!','The Mafia took over the town.','🔪'],jester:['Jester wins!',S.jester!=null?esc(P(S.jester).name)+' tricked everyone into voting them out.':'','🃏']}[S.winner]||['Game over','',''];
-  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">Game over · ${S.round} day${S.round>1?'s':''}</div><div class="bigname blur ${S.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p>${S.winStory?`<p class="story" style="margin:16px auto 0">${esc(S.winStory)}</p>`:''}</div>
+  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">Game over · ${S.round} day${S.round>1?'s':''}</div><div class="bigname blur ${S.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p>${S.winStory?`<p class="story" style="margin:16px auto 0">${esc(S.winStory.replace(/\s*\|\s*/g,' '))}</p>`:''}</div>
   <section class="card"><div class="card-h"><h3>Everyone's role</h3></div>${rosterHTML()}</section>
   <details class="card"><summary>What happened</summary><div class="log">${S.log.map(l=>`<div>${l}</div>`).join('')}</div></details>
   <div class="dock"><button class="btn big" data-a="again">Play again</button><button class="btn ghost" data-a="home">Home</button></div>`}
@@ -730,10 +734,10 @@ function resolveNight(){const N=S.night;let t=null;
   S.morning={killed,saved,story:t==null?story('quiet'):saved?story('save'):story('kill',P(killed).name)};
   S.log.push(`<b>Night ${S.round}:</b> `+(t==null?'The Mafia did nothing.':`Mafia targeted ${esc(P(t).name)} — ${saved?'saved by the Doctor.':'killed.'}`)+(N.invest!=null?` Detective checked ${esc(P(N.invest).name)}.`:''));
   S.winner=checkWin();S.screen='morning';S.pick=null;haptic(30);pendingSplash={kind:'day',title:'Morning',sub:'Day '+S.round+'. Everyone, open your eyes.'};
-  let line='Good morning, everyone. '+S.morning.story+' ';
+  let line='Good morning, everyone. | '+S.morning.story+' | ';
   if(killed!=null)line+=`The Mafia killed ${P(killed).name}.`+(S.cfg.reveal?` They were ${roleSay(P(killed).role)}.`:'');
   else line+=saved?'The doctor saved the Mafia\'s target. Everyone survived.':'Everyone survived.';
-  if(S.winner){S.winStory=winStory(S.winner);line+=' '+S.winStory}
+  if(S.winner){S.winStory=winStory(S.winner);line+=' | '+S.winStory}
   toSay=line;}
 function lock(){const N=S.night,pk=S.pick;if(pk==null)return;haptic(15);
   if(S.cfg.mode==='person'){const st=N.steps[N.idx];
@@ -764,7 +768,7 @@ const A={
   voicecfg:()=>{S.cfg.voice=!S.cfg.voice;if(S.cfg.voice)toSay='Voice narrator on.';else hush()},
   voice:()=>{S.cfg.voice=!S.cfg.voice;if(S.cfg.voice)toSay='Voice narrator on.';else hush()},
   repeat:()=>{S.menu=null;if(lastSaid)say(lastSaid,true)},
-  testvoice:()=>{say('Good evening. This is your Mafia narrator. If you can hear me, you are all set.',true);toast(VO&&VO.studioReady()?'Playing…':'Playing… no sound? Turn off Silent Mode, or get the studio voice')},
+  testvoice:()=>{say('Good evening. | This is your Mafia narrator. If you can hear me, you are all set.',true)},
   mins:d=>{S.cfg.mins=Math.min(15,Math.max(1,S.cfg.mins+ +d.v))},
   start:()=>{if(!setupError())startGame()},
   self:d=>{const i=+d.i;haptic();
@@ -787,11 +791,11 @@ const A={
     toSay='Time to vote. On the count of three, everyone point at who you think is in the Mafia. One. Two. Three.'},
   elim:()=>{if(S.pick==null)return;const p=P(S.pick);p.alive=false;S.verdict={who:S.pick};haptic(30);
     S.log.push(`<b>Day ${S.round}:</b> Town voted out ${esc(p.name)} (${ROLES[p.role].name}).`);
-    if(p.role==='jester'){S.winner='jester';S.jester=S.pick;S.verdict.story=story('jester',p.name);S.winStory=`${p.name} was the Jester all along, and the Jester wins!`;toSay=`${S.verdict.story} The town voted out ${p.name}. ${S.winStory}`}
+    if(p.role==='jester'){S.winner='jester';S.jester=S.pick;S.verdict.story=story('jester',p.name);S.winStory=`${p.name} was the Jester all along, and the Jester wins!`;toSay=`${S.verdict.story} | The town voted out ${p.name}. | ${S.winStory}`}
     else{S.winner=checkWin();S.verdict.story=story('out',p.name);if(S.winner)S.winStory=winStory(S.winner);
-      toSay=`${S.verdict.story} The town voted out ${p.name}.`+(S.cfg.reveal?` ${outRoleSay(p.role)}`:'')+(S.winner?' '+S.winStory:' Night is coming.')}
+      toSay=`${S.verdict.story} | The town voted out ${p.name}.`+(S.cfg.reveal?` ${outRoleSay(p.role)}`:'')+(S.winner?' | '+S.winStory:' | Night is coming.')}
     S.screen='verdict';S.pick=null;pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'}},
-  noelim:()=>{pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'};S.verdict={who:null,story:story('none')};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay=S.verdict.story+' The town could not agree. Nobody was voted out. Night is coming.'},
+  noelim:()=>{pendingSplash={kind:'verdict',title:'The verdict',sub:'The town has decided…'};S.verdict={who:null,story:story('none')};S.log.push(`<b>Day ${S.round}:</b> No one was voted out.`);S.screen='verdict';S.pick=null;toSay=S.verdict.story+' | The town could not agree. Nobody was voted out. | Night is coming.'},
   over:()=>{S.screen='over'},
   menu:()=>{S.menu='main'},
   close:()=>{S.menu=null;S.edit=null},
