@@ -210,12 +210,14 @@ const tLeft=()=>{const T=st().timer;if(!T)return 0;return T.running?Math.max(0,M
 setInterval(()=>{if(S().screen!=='online'||st().phase!=='day')return;const T=st().timer;if(!T)return;const l=tLeft();
   const el=document.getElementById('oclock'),ring=document.getElementById('oring'),w=document.getElementById('otimer');
   if(el)el.textContent=l===0?"Time's up":M.fmt(l);
-  if(ring)ring.setAttribute('stroke-dashoffset',(M.CIRC*(1-l/(T.total||1))).toFixed(1));
   if(w){w.classList.toggle('warn',l<=10&&l>0);w.classList.toggle('up',l===0)}
   if(T.running&&isHost()&&(st().cfg||{}).voice!==false){const k=phaseKey();
     if(l<=60&&l>50&&T.total>90&&!O.said[k+'60']){O.said[k+'60']=1;M.say('One minute left.',true)}
     if(l<=10&&l>5&&!O.said[k+'10']){O.said[k+'10']=1;M.say('Ten seconds.',true)}}
   if(T.running&&l===0&&!O.said[phaseKey()+'0']){O.said[phaseKey()+'0']=1;haptic([200,100,200]);if(isHost()&&(st().cfg||{}).voice!==false)M.say("Time's up. Time to vote.",true);M.render()}},250);
+
+(function ringLoop(){if(S().screen==='online'&&O.room&&st().phase==='day'&&st().timer){const T=st().timer,ex=T.running?Math.max(0,(T.endsAt-now())/1000):(T.left||0),r=document.getElementById('oring');
+  if(r)r.setAttribute('stroke-dashoffset',(M.CIRC*(1-Math.min(1,ex/(T.total||1)))).toFixed(2))}requestAnimationFrame(ringLoop)})();
 
 /* ---------- QR ---------- */
 function joinURL(){return location.origin+location.pathname+'?join='+O.code+(EMU?'&emu':'')}
@@ -291,7 +293,7 @@ function vLobby(){const ids=lobbyOrder(),p=pl(),n=ids.length,c=effCfg(n),err=cfg
     ${O.qr?`<div class="qr">${O.qr}</div>`:''}<p class="small muted">Others open the site, tap <b>Everyone's own phone → Join</b>, and type the code — or scan this.</p>
     <button class="btn ghost" data-a="oshare">Share invite link</button></div>
   <section class="card"><div class="card-h"><h3>Players</h3><span class="pill">${n}</span></div>
-    <div class="plist">${ids.map((u,i)=>`<div class="prow"><span class="dot ${p[u].online?'on':''}"></span><span class="pname">${esc(p[u].name)}${u===O.room.host?' <small class="muted">· host</small>':''}${u===me()?' <small class="muted">· you</small>':''}</span>${isHost()&&u!==me()?`<button class="x" data-a="okick" data-u="${u}" aria-label="Remove ${esc(p[u].name)}">${S().confirm==='okick'+u?'✓?':'×'}</button>`:''}</div>`).join('')}</div>
+    <div class="plist">${ids.map((u,i)=>`<div class="prow" data-k="u:${u}"><span class="dot ${p[u].online?'on':''}"></span><span class="pname">${esc(p[u].name)}${u===O.room.host?' <small class="muted">· host</small>':''}${u===me()?' <small class="muted">· you</small>':''}</span>${isHost()&&u!==me()?`<button class="x" data-a="okick" data-u="${u}" aria-label="Remove ${esc(p[u].name)}">${S().confirm==='okick'+u?'✓?':'×'}</button>`:''}</div>`).join('')}</div>
     ${n<4?`<p class="small muted c" style="margin-top:10px">Need ${4-n} more to start.</p>`:''}</section>
   ${isHost()?`<section class="card"><div class="card-h"><h3>Roles</h3><button class="link" data-a="ocustom">${O.custom?'Done':'Change'}</button></div>
     <div class="rchips">${chip('mafia',c.mafia)}${chip('doctor',c.doctor)}${chip('detective',c.detective)}${chip('jester',c.jester)}${chip('villager',Math.max(vil,0))}</div>
@@ -331,7 +333,7 @@ function vNight(){const s=st(),u=me();if(!alive(u))return top('Night '+s.round)+
 function allKnownMafia(){return myRole()==='mafia'?(O.mine.crew||[]):[]}
 
 function vMorning(){const s=st(),m=s.morning||{};
-  return top('Day '+s.round)+`<div class="stage"><div class="sun"></div><div class="kicker">Good morning · Day ${s.round}</div>
+  return top('Day '+s.round)+`<div class="stage ${m.killed?'kill':m.saved?'saved':''}">${m.killed?'<div class="flash red"></div>':m.saved?'<div class="flash green"></div>':''}<div class="sun"></div><div class="kicker">Good morning · Day ${s.round}</div>
   ${m.killed?`<p class="lead">Last night, the Mafia killed</p><div class="bigname blur red">${esc(nameOf(m.killed))}</div>${m.role?`<p class="lead late">They were ${tag(m.role)}</p>`:''}${m.killed===me()?'<p class="lead late">That\'s you. You can watch, but no talking about the game!</p>':''}`
    :`<div class="bigname blur" style="font-size:44px">Everyone survived!</div><p class="lead late">${m.saved?'The Mafia struck — but the Doctor saved them.':'A quiet night. Too quiet.'}</p>`}${m.story?`<p class="story">${esc(m.story)}</p>`:''}</div>
   <div class="dock">${s.winner?hostOnly(`<button class="btn big" data-a="oover">See who won</button>`,'Game over! Waiting for the host…'):hostOnly(`<button class="btn big" data-a="oday">Start discussion</button>`,'Waiting for the host to start the discussion…')}</div>`}
@@ -353,13 +355,13 @@ function vVote(){const s=st(),u=me(),al=aliveU();
   <div class="dock"><button class="btn big" data-a="ovotecast" ${O.pick==null?'disabled':''}>${O.pick==null?'Pick a player':'Vote for '+esc(nameOf(O.pick))}</button><button class="btn ghost" data-a="ovoteskip">Skip — don't vote anyone out</button></div>`}
 
 function vVerdict(){const s=st(),v=s.verdict||{};const votes=v.votes||{};
-  return top('Day '+s.round)+`<div class="stage" style="min-height:34vh"><div class="glyph">⚖️</div>${v.who?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(nameOf(v.who))}</div>${v.role?`<p class="lead late">They were ${tag(v.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">It was a tie, or most people skipped.</p>`}${v.story?`<p class="story">${esc(v.story)}</p>`:''}</div>
+  return top('Day '+s.round)+`<div class="stage" style="min-height:34vh"><div class="glyph gavel">⚖️</div>${v.who?`<p class="lead">The town voted out</p><div class="bigname blur">${esc(nameOf(v.who))}</div>${v.role?`<p class="lead late">They were ${tag(v.role)}</p>`:''}`:`<div class="bigname blur" style="font-size:44px">No one is out</div><p class="lead late">It was a tie, or most people skipped.</p>`}${v.story?`<p class="story">${esc(v.story)}</p>`:''}</div>
   ${Object.keys(votes).length?`<section class="card late"><div class="card-h"><h3>Votes</h3></div><div class="votes">${Object.keys(votes).map(k=>`<div><span>${esc(k)}</span><span class="arrow">→</span><b>${esc(votes[k])}</b></div>`).join('')}</div></section>`:''}
   <div class="dock">${s.winner?hostOnly(`<button class="btn big" data-a="oover">See who won</button>`,'Game over! Waiting for the host…'):hostOnly(`<button class="btn big" data-a="onext">Start Night ${s.round+1}</button>`,'Waiting for the host to start the night…')}</div>`}
 
 function vOver(){const s=st(),R=s.roles||{};const W={town:['Town wins!','Every member of the Mafia was caught.','🏛️'],mafia:['Mafia wins!','The Mafia took over the town.','🔪'],jester:['Jester wins!',esc(nameOf(s.jester))+' tricked everyone into voting them out.','🃏']}[s.winner]||['Game over','',''];
   const myTeam=R[me()]?ROLES[R[me()]].team:null,won=(s.winner==='town'&&myTeam==='town')||(s.winner==='mafia'&&myTeam==='mafia')||(s.winner==='jester'&&s.jester===me());
-  return`<div class="win"><div class="glyph">${W[2]}</div><div class="kicker">${won?'You won!':'Game over'} · ${s.round} day${s.round>1?'s':''}</div><div class="bigname blur ${s.winner==='mafia'?'red':''}">${W[0]}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p>${s.winStory?`<p class="story" style="margin:16px auto 0">${esc(s.winStory.replace(/\s*\|\s*/g,' '))}</p>`:''}</div>
+  return`<div class="win ${s.winner||''}"><div class="rays"></div><div class="glyph">${W[2]}</div><div class="kicker">${won?'You won!':'Game over'} · ${s.round} day${s.round>1?'s':''}</div><div class="bigname letters ${s.winner==='mafia'?'red':''}">${M.letters(W[0])}</div><p class="lead late" style="margin:8px auto 0">${W[1]}</p>${s.winStory?`<p class="story" style="margin:16px auto 0">${esc(s.winStory.replace(/\s*\|\s*/g,' '))}</p>`:''}</div>
   <section class="card"><div class="card-h"><h3>Everyone's role</h3></div><div class="roster">${order().map(u=>`<div class="row ${alive(u)?'':'dead'}"><span>${esc(nameOf(u))}</span>${R[u]?tag(R[u]):''}</div>`).join('')}</div></section>
   <details class="card"><summary>What happened</summary><div class="log">${(s.log||[]).map(l=>`<div>${l}</div>`).join('')}</div></details>
   <div class="dock">${isHost()?`<button class="btn big" data-a="oagain">Play again — same lobby</button><button class="btn ghost danger" data-a="oend">${S().confirm==='oend'?'Tap again to end for everyone':'End game'}</button>`:`<p class="small muted c">Waiting for the host to start another round…</p><button class="btn ghost" data-a="oleave">Leave</button>`}</div>`}
@@ -426,10 +428,12 @@ document.addEventListener('input',e=>{if(e.target.id==='ocode'){const v=e.target
 
 let lastPhaseKey='';
 window.MafiaOnline={
-  key(){const s=st();return[O.code?'in':'out',O.sub,O.room===undefined?'wait':O.room?'room':'none',s.gid,s.round,s.phase,O.flipKey===phaseKey(),O.sentKey===phaseKey(),!!(s.done&&F&&s.done[F.uid]),!!O.changing].join('|')},
+  key(){const s=st();return[O.code?'in':'out',O.sub,O.room===undefined?'wait':O.room?'room':'none',s.gid,s.round,s.phase,O.sentKey===phaseKey(),!!(s.done&&F&&s.done[F.uid]),!!O.changing].join('|')},
   phase:phaseOf,sheet,
+  rank(){return O.code?3:(O.sub==='menu'?1:2)},
+  splashNext(){if(!O.room||!lastPhaseKey)return false;return phaseKey()!==lastPhaseKey&&['roles','night','morning','vote','verdict'].includes(st().phase)},
   after(){O.fx=null;const k=phaseKey();if(k!==lastPhaseKey){const first=!lastPhaseKey;lastPhaseKey=k;O.pick=null;O.changing=false;if(st().phase!=='vote')O.myVote=null;
-    if(!first&&O.room){const s=st(),sp={roles:{kind:'deal',title:'Secret roles',sub:'Check your phone. Keep it hidden!'},night:{kind:'night',title:'Night '+s.round,sub:'Take your turn on your phone.'},morning:{kind:'day',title:'Morning',sub:'Day '+s.round+'. Everyone, wake up.'},vote:{kind:'vote',title:'Time to vote',sub:'Vote on your phone.'},verdict:{kind:'verdict',title:'The verdict',sub:'The votes are in…'}}[s.phase];if(sp)M.splash(sp)}}},
+    if(!first&&O.room){const s=st(),sp={roles:{kind:'deal',title:'Secret roles',sub:'Check your phone. Keep it hidden!'},night:{kind:'night',title:'Night '+s.round,sub:'Take your turn on your phone.'},morning:{kind:'day',title:'Morning',sub:'Day '+s.round+'. Everyone, wake up.'},vote:{kind:'vote',title:'Time to vote',sub:'Vote on your phone.'},verdict:{kind:'verdict',title:'The verdict',sub:'The votes are in…'}}[s.phase];if(sp)M.splash(sp);if(s.phase==='over'&&s.winner)setTimeout(()=>M.confetti(s.winner),650)}}},
   open(){O.err='';if(!O.code)O.sub='menu';fb().catch(()=>{})},
   _O:O,get _F(){return F},_sweep:()=>{O.swept=false;return sweep()}
 };

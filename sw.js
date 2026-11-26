@@ -1,4 +1,4 @@
-const CACHE='mafia-v10';
+const CACHE='mafia-v11';
 const VOICE_CACHE='mafia-voice-v1';   // big narrator voice files, kept across app updates
 const FILES=['./','index.html','online.js','voice.js','voices/en_US-joe-medium.mp3','voices/en_US-lessac-medium.mp3','voices/en_GB-alan-medium.mp3','voices/en_GB-cori-medium.mp3','manifest.json','icon-192.png','icon-512.png','apple-touch-icon.png'];
 const VOICE_FILE=/huggingface\.co\/.*piper-voices|onnxruntime-web@|@diffusionstudio\/piper-wasm@|@mintplex-labs\/piper-tts-web@|\/npm\/[^/]+@[^/]+\/\+esm/;
