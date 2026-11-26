@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Mafia">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -516,19 +516,36 @@ html[data-dir=launch]::view-transition-new(page){animation:none}
 .win .bigname.letters{white-space:normal}
 .enter .letters .w span{display:inline-block;animation:lletter .85s cubic-bezier(.2,1.4,.4,1) both;animation-delay:calc(.35s + var(--i)*60ms)}
 
-/* iOS 26+ Home Screen apps: the system draws a blur over the top ~40pt unless the top edge is a full-width
-   position:fixed box with a solid background-color and no backdrop-filter (WebKit's fixedContainerEdges check). */
+/* iOS 26+ Home Screen apps draw a blur over the top ~40pt unless WebKit's probe (middle of the top edge,
+   4px BELOW the status bar, pointer-events ignored) lands on a position:fixed box that is >=90% wide, >10px tall
+   and paints an opaque background-color (LocalFrameView::fixedContainerEdges). So the bar runs past the status bar. */
 #topedge{display:none}
-html.standalone #topedge{display:block;position:fixed;top:0;left:0;right:0;height:max(12px,env(safe-area-inset-top));z-index:8;--edge:#0e0b0c;background-color:var(--edge);transition:background-color 1s}
-html.standalone #topedge::after{content:'';position:absolute;left:0;right:0;top:100%;height:12px;background:linear-gradient(var(--edge),transparent);pointer-events:none;transition:opacity 1s}
+html.standalone{--sat:env(safe-area-inset-top,0px)}
+html.standalone #topedge{display:block;position:fixed;top:0;left:0;right:0;height:calc(var(--sat) + 18px);z-index:10;--edge:#0e0b0c;background-color:var(--edge);transition:background-color 1s}
+html.standalone #topedge::after{content:'';position:absolute;left:0;right:0;top:100%;height:12px;background:linear-gradient(var(--edge),transparent);pointer-events:none}
 html.standalone body[data-phase=night] #topedge{--edge:#0a0b16}
 html.standalone body[data-phase=day] #topedge{--edge:#120d0b}
-html.standalone #app{padding-top:calc(max(12px,env(safe-area-inset-top)) + 12px)}
-html.standalone .veil{-webkit-backdrop-filter:none;backdrop-filter:none;background-color:rgba(0,0,0,.72)}
+html.standalone body:has(#sheet:not(.closing)) #topedge{--edge:#050404;transition-duration:.3s}
+html.standalone #app{padding-top:calc(var(--sat) + 30px)}
+html.standalone .veil{-webkit-backdrop-filter:none;backdrop-filter:none}
+html.standalone .confetti{z-index:9}
+html.standalone .sheet{max-height:calc(100dvh - var(--sat) - 44px)}
 html.standalone .splash.sp-night{background-color:#07080f}
 html.standalone .splash.sp-day{background-color:#140c08}
 html.standalone .splash.sp-vote,html.standalone .splash.sp-verdict{background-color:#0e0809}
 html.standalone .splash.sp-deal{background-color:#0e0b0c}
+
+/* update popup */
+#update{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);max-width:496px;margin:0 auto;z-index:55;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;border-radius:20px;background-color:#211a1d;border:1px solid #d9b26f55;box-shadow:0 18px 44px -12px #000c,0 0 0 1px #00000040;animation:updIn .7s cubic-bezier(.3,1.35,.45,1) both}
+html.standalone #update{top:calc(var(--sat) + 24px)}
+#update img{width:40px;height:40px;border-radius:10px;flex:none}
+#update .ut{flex:1;min-width:0}#update b{display:block;font-size:15.5px}#update small{display:block;color:var(--muted);font-size:13px}
+#update .btn{padding:10px 16px;font-size:15px;flex:none}
+#update .ux{background:none;border:0;color:var(--muted);font-size:22px;width:32px;height:32px;border-radius:50%;flex:none}
+#update.out{animation:updOut .35s cubic-bezier(.4,0,1,1) forwards}
+#update.going{animation:updOut .2s ease forwards}
+@keyframes updIn{from{opacity:0;transform:translateY(-140%) scale(.9)}}
+@keyframes updOut{to{opacity:0;transform:translateY(-140%) scale(.95)}}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
@@ -1114,7 +1131,22 @@ setInterval(()=>{if(S.screen!=='day'||!S.timer||!S.timer.running)return;const T=
   if(l<=10&&l>5&&!T.w10){T.w10=1;say('Ten seconds.')}
   if(l<=0){T.running=false;T.left=0;haptic([200,100,200]);say("Time's up. Time to vote.");render()}},250);
 
-if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+/* ---------- updates: a Home Screen app has no refresh button, so offer one ---------- */
+function showUpdate(){if(document.getElementById('update'))return;const el=document.createElement('div');el.id='update';el.setAttribute('role','status');
+  el.innerHTML='<img src="icon-192.png" alt=""><div class="ut"><b>Update available</b><small>Tap to get the newest version</small></div><button class="btn" id="updgo">Update</button><button class="ux" id="updx" aria-label="Later">×</button>';
+  document.body.appendChild(el);haptic(15);
+  el.querySelector('#updgo').onclick=()=>{el.classList.add('going');save();setTimeout(()=>location.reload(),180)};
+  el.querySelector('#updx').onclick=()=>{el.classList.add('out');setTimeout(()=>el.remove(),350)}}
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){try{
+  let controlled=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(controlled)showUpdate();controlled=true});
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    const check=()=>{try{reg.update().catch(()=>{})}catch(e){}};
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});
+    setInterval(check,20*60*1000);
+    if(reg.waiting&&controlled)showUpdate();
+  }).catch(()=>{})}catch(e){}}
+window.__showUpdate=showUpdate;
 /* ---------- launch splash ---------- */
 (function(){const el=document.getElementById('launch');if(!el)return;let seen=false;try{seen=!!sessionStorage.getItem('mafia-launched');sessionStorage.setItem('mafia-launched','1')}catch(e){}
   if(FAST||REDUCED||seen){el.remove();return}
