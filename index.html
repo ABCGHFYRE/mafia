@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Mafia</title>
 <meta name="description" content="Mafia party game for one phone — deal secret roles, survive the night, vote out the killers.">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#0e0b0c">
 <meta name="apple-mobile-web-app-title" content="Mafia">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -516,8 +516,19 @@ html[data-dir=launch]::view-transition-new(page){animation:none}
 .win .bigname.letters{white-space:normal}
 .enter .letters .w span{display:inline-block;animation:lletter .85s cubic-bezier(.2,1.4,.4,1) both;animation-delay:calc(.35s + var(--i)*60ms)}
 
-/* installed app: solid black status bar on iPhone; fade the top of the background into it so there's no seam */
-@media (display-mode:standalone){body::after{content:'';position:fixed;left:0;right:0;top:0;height:70px;background:linear-gradient(#000,transparent);z-index:-1;pointer-events:none}}
+/* iOS 26+ Home Screen apps: the system draws a blur over the top ~40pt unless the top edge is a full-width
+   position:fixed box with a solid background-color and no backdrop-filter (WebKit's fixedContainerEdges check). */
+#topedge{display:none}
+html.standalone #topedge{display:block;position:fixed;top:0;left:0;right:0;height:max(12px,env(safe-area-inset-top));z-index:8;--edge:#0e0b0c;background-color:var(--edge);transition:background-color 1s}
+html.standalone #topedge::after{content:'';position:absolute;left:0;right:0;top:100%;height:12px;background:linear-gradient(var(--edge),transparent);pointer-events:none;transition:opacity 1s}
+html.standalone body[data-phase=night] #topedge{--edge:#0a0b16}
+html.standalone body[data-phase=day] #topedge{--edge:#120d0b}
+html.standalone #app{padding-top:calc(max(12px,env(safe-area-inset-top)) + 12px)}
+html.standalone .veil{-webkit-backdrop-filter:none;backdrop-filter:none;background-color:rgba(0,0,0,.72)}
+html.standalone .splash.sp-night{background-color:#07080f}
+html.standalone .splash.sp-day{background-color:#140c08}
+html.standalone .splash.sp-vote,html.standalone .splash.sp-verdict{background-color:#0e0809}
+html.standalone .splash.sp-deal{background-color:#0e0b0c}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
@@ -529,6 +540,7 @@ html[data-dir=launch]::view-transition-new(page){animation:none}
   <div class="lword"><span style="--i:0">M</span><span style="--i:1">a</span><span style="--i:2">f</span><span style="--i:3">i</span><span style="--i:4">a</span></div>
   <div class="lline"></div><div class="ltag">Lies, secrets and one phone.</div></div></div>
 <div id="app"></div>
+<div id="topedge" aria-hidden="true"></div>
 <script src="voice.js"></script>
 <script>
 (function(){
@@ -651,6 +663,7 @@ function detect(){const u=navigator.userAgent||'';
   if(/Edg\//.test(u))return'desktop-edge';if(/Firefox/.test(u))return'desktop-firefox';if(/Chrome\//.test(u))return'desktop-chrome';if(/Safari\//.test(u))return'desktop-safari';return'desktop-chrome'}
 const DETECTED=detect();
 const standalone=(()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}})();
+if(standalone)document.documentElement.classList.add('standalone');
 
 /* ---------- helpers ---------- */
 const P=i=>S.players[i];
